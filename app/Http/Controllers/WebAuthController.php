@@ -21,7 +21,7 @@ class WebAuthController extends Controller
 
         $credentials = $request->only('email', 'password');
 
-        if(Auth::attemps($credentials)){
+        if(Auth::attempt($credentials)){
             $request->session()->regenerate();
             $user = Auth::user();
             switch($user->role_id){
@@ -35,7 +35,7 @@ class WebAuthController extends Controller
                     return redirect()->route("cliente.inicio");
                     break;
                 default:
-                return redirected()->route("login");
+                return redirect()->route("login");
             }
         }else{
             return back()->withErrors([
