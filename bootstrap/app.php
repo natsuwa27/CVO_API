@@ -13,15 +13,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
 
-    $middleware->alias([
-        'auth' => \App\Http\Middleware\AuthenticatedMiddleware::class,
-        'guest' => \App\Http\Middleware\LogedMiddleware::class,
-        'role' => \App\Http\Middleware\RoleMiddleware::class,
-    ]);
+        // Aliases OFICIALES correctos para Laravel 11
+        $middleware->alias([
+            'auth'  => \Illuminate\Auth\Middleware\Authenticate::class,
+            'guest' => \Illuminate\Auth\Middleware\RedirectIfAuthenticated::class,
+            
+            // Este sí es tuyo y está bien
+            'role'  => \App\Http\Middleware\RoleMiddleware::class,
+        ]);
 
-
-
-        
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

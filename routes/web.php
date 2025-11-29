@@ -5,6 +5,12 @@ use App\Http\Controllers\WebAuthController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 
+
+Route::get('/bienvenida', function () {
+    return view('auth.bienvenida');
+})->name('bienvenida');
+
+
 Route::get("/", function () {
     return redirect()->route("login");
 });
@@ -35,3 +41,14 @@ Route::middleware(['auth', 'role:3'])->group(function () {
     Route::get('/cliente/homecliente', fn() => view('cliente.homecliente'))
         ->name('cliente.homecliente');
 });
+
+Route::get('/force-logout', function(){
+    
+        Auth::logout();
+        session()->invalidate();
+        session()->regenerateToken();
+        return redirect("/login");
+
+});
+
+Route::post('/registro', [WebAuthController::class, 'webRegister']);
