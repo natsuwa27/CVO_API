@@ -9,12 +9,9 @@ use App\Models\User;
 
 class WebAuthController extends Controller
 {
-    /**
-     * Registro desde web (solo admin puede registrar).
-     */
+    
     public function webRegister(Request $request)
     {
-        // Validación del formulario
         $request->validate([
             'name'      => 'required|min:3',
             'email'     => 'required|email|unique:users,email',
@@ -28,31 +25,22 @@ class WebAuthController extends Controller
             'password' => Hash::make($request->password),
             'phone'=> $request->phone,
             'address' => $request->address,
-            'role_id' => 3, // Por ejemplo: cliente
+            'role_id' => 3, 
         ]);
 
         return redirect('/login')->with('success', 'Usuario registrado exitosamente.');
     }
 
-    /**
-     * Vista de perfil
-     */
     public function profile()
     {
         return view('profile', ['user' => Auth::user()]);
     }
 
-    /**
-     * Mostrar formulario de login
-     */
     public function showLogin()
     {
         return view('auth.login');
     }
 
-    /**
-     * Procesar login
-     */
     public function login(Request $request)
     {
         $request->validate([
@@ -82,9 +70,6 @@ class WebAuthController extends Controller
         ]);
     }
 
-    /**
-     * Cerrar sesión
-     */
     public function logout(Request $request)
     {
         Auth::logout();
