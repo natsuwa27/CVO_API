@@ -25,7 +25,7 @@ class RoleController extends Controller
     }
 
     public function readOne($id){
-        return response()->json (Role::with ("users")->indOrFail($id));
+        return response()->json (Role::with ("users")->findOrFail($id));
     }
 
     public function update($id){
