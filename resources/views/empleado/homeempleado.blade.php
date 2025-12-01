@@ -21,8 +21,18 @@
             <h3 style="color:white">Veterinaria del oriente</h3>
         </div>
     </div>
+    
+        <!-- Cerrar sesión -->
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button class="bg-red-600 px-3 py-1 rounded hover:bg-red-700">
+                Salir
+            </button>
+        </form>
+    </div>
 
-    <div class="col-10 d-flex flex-column align-items-center mt-2">
+    <div class="col-10 d-flex flex-column align-items-center mt-2"
+    >
         
         <h1 class="mt-4">Bienvenido Empleado</h1>
         
