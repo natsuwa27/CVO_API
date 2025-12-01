@@ -12,13 +12,13 @@ class WebAuthController extends Controller
     
     public function webRegister(Request $request)
     {
+     
         $request->validate([
             'name'      => 'required|min:3',
             'email'     => 'required|email|unique:users,email',
             'password'  => 'required|min:4|confirmed',
         ]);
 
-        // Crear usuario
        User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -77,6 +77,6 @@ class WebAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/login');
+        return redirect('/login')->with('message', 'Sesión cerrada con éxito');
     }
 }

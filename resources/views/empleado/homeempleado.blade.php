@@ -1,32 +1,44 @@
 <!DOCTYPE html>
 <html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Administración</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="EstilosInsanos.css">
+    <link rel="stylesheet" href="{{ asset('css/Estilos.css') }}">
+    <style>
+        .empleado-image {
+            max-width: 300px; 
+            height: auto;     
+            margin-top: 20px; 
+            border-radius: 10px;
+        }
+    </style>
+</head>
 
-<body>
-
-
+<body class="d-flex flex-column align-items-center"> 
+    <div id="BarraTop">
+        <div class="d-flex flex-column align-items-center mt-2">
+            <h3 style="color:white">Veterinaria del oriente</h3>
+        </div>
+    </div>
     
-     <div id="BarraTop">
-      <div class="d-flex flex-column align-items-center mt-2">
-        <h3 style="color:white">Veterinaria del oriente</h3>
-      </div>
-     </div>
+        <!-- Cerrar sesión -->
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button class="bg-red-600 px-3 py-1 rounded hover:bg-red-700">
+                Salir
+            </button>
+        </form>
+    </div>
 
+    <div class="col-10 d-flex flex-column align-items-center mt-2"
+    >
+        
+        <h1 class="mt-4">Bienvenido Empleado</h1>
+        
+        <img src="{{ asset('css/empleado.jpg') }}" alt="Imagen del Empleado" class="admin-image">
+        
+    </div>
 
-     <div class="col-10 d-flex justify-content-center mt-2">
-
-        <h1> Bienvenido empleado </h1>
-
-     </div>
-
-
-
-
-
-
-
-
-      <div id="BarraBottom" class="d-flex flex-column align-items-center mt-2"></div>
-     
 </body>
+</html>

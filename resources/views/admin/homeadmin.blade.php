@@ -2,21 +2,40 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-
+    <title>Panel de Administración</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="{{ asset('css/EstilosInsanos.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/Estilos.css') }}">
+    <style>
+        .admin-image {
+            max-width: 300px; 
+            height: auto;     
+            margin-top: 20px; 
+            border-radius: 10px;
+        }
+    </style>
 </head>
 
-<body>
-
+<body class="d-flex flex-column align-items-center"> 
     <div id="BarraTop">
         <div class="d-flex flex-column align-items-center mt-2">
             <h3 style="color:white">Veterinaria del oriente</h3>
         </div>
     </div>
+     <!-- Cerrar sesión -->
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button class="bg-red-600 px-3 py-1 rounded hover:bg-red-700">
+                Salir
+            </button>
+        </form>
+    </div>
 
-    <div class="col-10 d-flex justify-content-center mt-2">
-        <h1>Bienvenido Admin</h1>
+    <div class="col-10 d-flex flex-column align-items-center mt-2">
+        
+        <h1 class="mt-4">Bienvenido Admin</h1>
+        
+        <img src="{{ asset('css/Admin.jpg') }}" alt="Imagen del Administrador" class="admin-image">
+        
     </div>
 
 </body>
