@@ -6,27 +6,28 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('appointments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('pet_id')->constrained("pets")->onDelete('cascade');
-            $table->foreignId('service_id')->constrained("services")->onDelete('cascade');
-            $table->foreignId('staff_id')->constrained("users")->onDelete('cascade');
-            $table->foreignId('client_id')->constrained("users")->onDelete('cascade');
-            $table->date('appointment_date');
-            $table->enum('status', ['scheduled', 'completed', 'canceled'])->default('scheduled');
-            $table->text('notes')->nullable();
+            $table->unsignedBigInteger('client_id');
+            $table->unsignedBigInteger('pet_id');
+            $table->dateTime('date');
+            $table->string('reason');
+            $table->enum('service_type', [
+                'consultation',
+                'vaccination',
+                'surgery',
+                'grooming'
+            ]);
+            $table->boolean('active')->default(true);
             $table->timestamps();
+
+            $table->foreign('client_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('pet_id')->references('id')->on('pets')->onDelete('cascade');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('appointments');
