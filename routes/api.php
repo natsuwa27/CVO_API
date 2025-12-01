@@ -35,3 +35,4 @@ Route::prefix('appointments')->group(function () {
     Route::put('/update/{id}', [AppointmentController::class, 'update']);
     Route::delete('/delete/{id}', [AppointmentController::class, 'delete']);
 });
+Route::get('/pets', [PetController::class, 'apiIndex']);
