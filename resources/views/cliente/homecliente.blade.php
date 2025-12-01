@@ -1,32 +1,34 @@
 <!DOCTYPE html>
 <html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Administración</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="EstilosInsanos.css">
+    <link rel="stylesheet" href="{{ asset('css/Estilos.css') }}">
+    <style>
+        .cliente-image {
+            max-width: 300px; 
+            height: auto;    
+            margin-top: 20px; 
+            border-radius: 10px;
+        }
+    </style>
+</head>
 
-<body>
+<body class="d-flex flex-column align-items-center"> 
+    <div id="BarraTop">
+        <div class="d-flex flex-column align-items-center mt-2">
+            <h3 style="color:white">Veterinaria del oriente</h3>
+        </div>
+    </div>
 
+    <div class="col-10 d-flex flex-column align-items-center mt-2">
+        
+        <h1 class="mt-4">Bienvenido Cliente</h1>
+        
+        <img src="{{ asset('css/cliente.jpg') }}" alt="Imagen del Cliente" class="admin-image">
+        
+    </div>
 
-    
-     <div id="BarraTop">
-      <div class="d-flex flex-column align-items-center mt-2">
-        <h3 style="color:white">Veterinaria del oriente</h3>
-      </div>
-     </div>
-
-
-     <div class="col-10 d-flex justify-content-center mt-2">
-
-        <h1> Bienvenido cliente </h1>
-
-     </div>
-
-
-
-
-
-
-
-
-      <div id="BarraBottom" class="d-flex flex-column align-items-center mt-2"></div>
-     
 </body>
+</html>

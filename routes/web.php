@@ -6,12 +6,12 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 
 
-Route::get('/bienvenida', function () {
+Route::get('/', function () {
     return view('auth.bienvenida');
 })->name('bienvenida');
 
 
-Route::get("/", function () {
+Route::get("/login", function () {
     return redirect()->route("login");
 });
 
