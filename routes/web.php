@@ -37,9 +37,11 @@ Route::middleware(['auth', 'role:2'])->group(function () {
 });
 
 // CLIENTE (role_id = 3)
-Route::middleware(['auth', 'role:3'])->group(function () {
-    Route::get('/cliente/homecliente', fn() => view('cliente.homecliente'))
-        ->name('cliente.homecliente');
+Route::middleware(['auth', \App\Http\Middleware\RoleMiddleware::class . ':3'])->group(function () {
+    Route::get('/cliente/homecliente', [PetController::class, 'index'])->name('cliente.homecliente');
+    Route::get('/cliente/registro_mascota', [PetController::class, 'create'])->name('pets.create');
+    Route::post('/cliente/registro_mascota', [PetController::class, 'store'])->name('pets.store');
+    
 });
 
 Route::get('/force-logout', function(){

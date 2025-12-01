@@ -26,3 +26,6 @@ Route::prefix('roles')->group(function () {
     Route::get('/{id}', [RoleController::class, 'readOne']);
     Route::put('/{id}', [RoleController::class, 'update']);
 });
+
+
+Route::get('/pets', [PetController::class, 'apiIndex']);
