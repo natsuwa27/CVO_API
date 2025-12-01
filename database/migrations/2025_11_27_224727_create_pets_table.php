@@ -12,13 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('pets', function (Blueprint $table) {
-            $table->id();
             $table->string('name');
-            $table->string('species');
+            $table->string('species'); // Tipo (perro, gato, etc.)
+            $table->string('breed')->nullable(); // Raza
+            $table->string('color')->nullable();
+            $table->string('special_marks')->nullable();
             $table->decimal('weight', 8, 2)->nullable();
             $table->enum('sex', ['male', 'female'])->default('male');
-            $table->integer('age');
-            $table->foreignId('owner_id')->constrained("users")->onDelete('cascade');
+            $table->integer('age')->nullable();
+            $table->string('photo_path')->nullable(); // Ruta de la foto
+            $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
             $table->boolean('active')->default(true);
             $table->timestamps();
         });
