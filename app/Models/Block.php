@@ -2,13 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
 class Block extends Model
 {
     use HasFactory;
-
-    protected $table = 'blocks';
 
     protected $fillable = [
         'calendar_id',
@@ -23,19 +22,13 @@ class Block extends Model
         'is_booked' => 'boolean',
     ];
 
-    /**
-     * Relación: un bloque pertenece a un día del calendario.
-     */
     public function calendar()
     {
         return $this->belongsTo(Calendar::class);
     }
 
-    // Si luego ligas con citas:
-    /*
     public function appointment()
     {
-        return $this->belongsTo(Appointment::class);
+        return $this->hasOne(Appointment::class);
     }
-    */
 }

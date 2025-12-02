@@ -12,7 +12,7 @@
     <tr>
       <th>Mascota</th>
       <th>Servicio</th>
-      <th>Fecha</th>
+      <th>Horario</th>
       <th>Estado</th>
       <th>Acciones</th>
     </tr>
@@ -22,7 +22,10 @@
       <tr>
         <td>{{ $a->pet->name ?? 'N/A' }}</td>
         <td>{{ ucfirst($a->service->name ?? 'N/A') }}</td>
-        <td>{{ \Carbon\Carbon::parse($a->date)->format('d/m/Y H:i') }}</td>
+        <td>
+          {{ $a->block->calendar->date->format('d/m/Y') }}
+          {{ $a->block->start_time }} - {{ $a->block->end_time }}
+        </td>
         <td>{{ $a->active ? 'Activa' : 'Cancelada' }}</td>
         <td class="d-flex gap-2">
           <a href="{{ route('appointments.show', $a->id) }}" class="btn btn-info btn-sm">Ver</a>
@@ -34,7 +37,7 @@
         </td>
       </tr>
     @empty
-      <tr><td colspan="5" class="text-center">Sin citas registradas.</td></tr>
+      <tr><td colspan="5" class="text-center">No hay citas registradas.</td></tr>
     @endforelse
   </tbody>
 </table>

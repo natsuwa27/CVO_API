@@ -32,7 +32,15 @@
 
     <div class="mb-3">
       <label class="form-label">Fecha y hora</label>
-      <input type="datetime-local" name="date" class="form-control" required>
+      <select name="block_id" class="form-select" required>
+        @foreach($blocks as $block)
+          <option value="{{ $block->id }}">
+            {{ $block->calendar->date->format('d/m/Y') }}
+            ({{ $block->calendar->date->locale('es')->isoFormat('dddd') }})
+            {{ $block->start_time }} - {{ $block->end_time }}
+          </option>
+        @endforeach
+      </select>
     </div>
 
     <div class="mb-3">
