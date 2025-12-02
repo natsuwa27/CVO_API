@@ -25,10 +25,33 @@ Route::post('/login', [WebAuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 
 // ADMIN (role_id = 1)
-Route::middleware(['auth', 'role:1'])->group(function () {
-    Route::get('/admin/homeadmin', fn() => view('admin.homeadmin'))
+
+
+        Route::middleware(['auth', 'role:1'])->group(function () {
+
+    Route::get('/admin/homeadmin', [WebAuthController::class, 'adminPanel'])
         ->name('admin.homeadmin');
+
+    Route::post('/admin/desactivar/{id}', [WebAuthController::class, 'desactivar'])
+        ->name('admin.desactivar');
+
+    Route::post('/admin/reactivar/{id}', [WebAuthController::class, 'reactivar'])
+        ->name('admin.reactivar');
+
+    Route::get('/admin/crear-usuario', [WebAuthController::class, 'showCreateUser'])
+        ->name('admin.crearusuario');
+
+    Route::post('/admin/crear-usuario', [WebAuthController::class, 'storeUser'])
+        ->name('admin.storeusuario');
+
+        Route::put('/admin/usuarios/{id}', [WebAuthController::class, 'updateusuario'])
+    ->name('admin.updateusuario');
+
+
 });
+
+
+
 
 // EMPLEADO (role_id = 2)
 Route::middleware(['auth', 'role:2'])->group(function () {
