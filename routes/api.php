@@ -26,12 +26,3 @@ Route::prefix('roles')->group(function () {
     Route::get('/{id}', [RoleController::class, 'readOne']);
     Route::put('/{id}', [RoleController::class, 'update']);
 });
-
-// Calendarios
-Route::get('/calendars', [CalendarController::class, 'index']);
-Route::post('/calendars', [CalendarController::class, 'store']);
-
-// Bloques del calendario
-Route::post('/calendars/{calendar}/blocks', [CalendarController::class, 'addBlock']);
-Route::put('/blocks/{block}', [CalendarController::class, 'updateBlock']);
-Route::delete('/blocks/{block}', [CalendarController::class, 'destroyBlock']);

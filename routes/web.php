@@ -4,8 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebAuthController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
-
-
+use App\Http\Controllers\CalendarController;
 Route::get('/bienvenida', function () {
     return view('auth.bienvenida');
 })->name('bienvenida');
@@ -52,3 +51,9 @@ Route::get('/force-logout', function(){
 });
 
 Route::post('/registro', [WebAuthController::class, 'webRegister']);
+
+Route::get('/calendars', [CalendarController::class, 'index'])->name('calendars.index');
+Route::post('/calendars/generate-month', [CalendarController::class, 'generateMonth'])->name('calendars.generateMonth');
+Route::get('/calendars/{calendar}', [CalendarController::class, 'show'])->name('calendars.show');
+Route::patch('/calendars/{calendar}/close', [CalendarController::class, 'closeDay'])->name('calendars.closeDay');
+Route::patch('/blocks/{block}/toggle', [CalendarController::class, 'toggleBlock'])->name('blocks.toggle');
