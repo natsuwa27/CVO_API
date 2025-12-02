@@ -12,6 +12,8 @@ class Appointment extends Model
     protected $fillable = [
         'client_id',
         'pet_id',
+        'service_id',
+        'block_id',
         'date',
         'reason',
         'service_id',
@@ -33,4 +35,8 @@ class Appointment extends Model
         return $this->belongsTo(Service::class);
     }
 
+    public function block()
+    {
+        return $this->belongsTo(Block::class);
+    }
 }

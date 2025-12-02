@@ -7,46 +7,62 @@ use Illuminate\Http\Request;
 use App\Models\Appointment;
 use App\Models\Pet;
 use App\Models\Service;
+use App\Models\Block;
 use Illuminate\Support\Facades\Auth;
 
 class AppointmentController extends Controller
 {
+    /** ------------------ API ------------------ **/
+
     public function create(Request $request)
     {
         $data = $request->validate([
-            'pet_id'       => 'required|exists:pets,id',
-            'date'         => 'required|date',
-            'service_type' => 'required|in:consultation,vaccination,surgery,grooming',
-            'reason'       => 'required|string|max:255',
-            'active'       => 'sometimes|boolean',
+            'pet_id'     => 'required|exists:pets,id',
+            'service_id' => 'required|exists:services,id',
+            'block_id'   => 'required|exists:blocks,id',
+            'reason'     => 'required|string|max:255',
+            'active'     => 'sometimes|boolean',
         ]);
 
-        $data['client_id'] = Auth::id();
-        $data['active'] = $data['active'] ?? true;
+        $block = Block::with('calendar')->findOrFail($data['block_id']);
 
-        $appointment = Appointment::create($data)->load(['client','pet']);
+        if (! $block->is_active || $block->is_booked || ! $block->calendar->is_open) {
+            return response()->json(['error' => 'El horario seleccionado no está disponible.'], 422);
+        }
+
+        $appointment = Appointment::create([
+            'client_id'  => Auth::id(),
+            'pet_id'     => $data['pet_id'],
+            'service_id' => $data['service_id'],
+            'block_id'   => $block->id,
+            'date'       => $block->calendar->date->format('Y-m-d').' '.$block->start_time,
+            'reason'     => $data['reason'],
+            'active'     => $data['active'] ?? true,
+        ]);
+
+        $block->update(['is_booked' => true]);
 
         return response()->json([
-            'message' => "Appointment created: Client {$appointment->client->name}, Pet {$appointment->pet->name}, Date {$appointment->date}, Service {$appointment->service_type}, Reason {$appointment->reason}",
-            'appointment' => $appointment
+            'message' => "Appointment created successfully",
+            'appointment' => $appointment->load(['client','pet','service'])
         ], 201);
     }
 
     public function read($id)
     {
-        $appointment = Appointment::with(['client','pet'])
+        $appointment = Appointment::with(['client','pet','service','block.calendar'])
             ->where('client_id', Auth::id())
             ->findOrFail($id);
 
         return response()->json([
-            'message' => "Appointment details: Client {$appointment->client->name}, Pet {$appointment->pet->name}, Date {$appointment->date}, Service {$appointment->service_type}, Reason {$appointment->reason}",
+            'message' => "Appointment details",
             'appointment' => $appointment
         ]);
     }
 
     public function myAppointments()
     {
-        $appointments = Appointment::with(['client','pet'])
+        $appointments = Appointment::with(['client','pet','service','block.calendar'])
             ->where('client_id', Auth::id())
             ->get();
 
@@ -61,39 +77,45 @@ class AppointmentController extends Controller
         $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
 
         $data = $request->validate([
-            'date'         => 'sometimes|date',
-            'service_type' => 'sometimes|in:consultation,vaccination,surgery,grooming',
-            'reason'       => 'sometimes|string|max:255',
-            'active'       => 'sometimes|boolean',
+            'reason' => 'sometimes|string|max:255',
+            'active' => 'sometimes|boolean',
         ]);
 
         $appointment->update($data);
-        $appointment->load(['client','pet']);
 
         return response()->json([
-            'message' => "Appointment updated: Client {$appointment->client->name}, Pet {$appointment->pet->name}, New date {$appointment->date}, Service {$appointment->service_type}, Reason {$appointment->reason}",
-            'appointment' => $appointment
+            'message' => "Appointment updated",
+            'appointment' => $appointment->load(['client','pet','service'])
         ]);
     }
 
     public function delete($id)
     {
         $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
-        $appointment->reason = 'Cancelled appointment';
-        $appointment->active = false;
-        $appointment->save();
+
+        if ($appointment->block_id) {
+            $block = Block::find($appointment->block_id);
+            if ($block) {
+                $block->update(['is_booked' => false]);
+            }
+        }
+
+        $appointment->update([
+            'reason' => 'Cancelled appointment',
+            'active' => false,
+        ]);
 
         return response()->json([
-            'message' => "Appointment cancelled: ID {$appointment->id}, Client {$appointment->client->name}, Pet {$appointment->pet->name}, Date {$appointment->date}",
+            'message' => "Appointment cancelled",
             'appointment' => $appointment
         ]);
     }
 
-
+    /** ------------------ WEB ------------------ **/
 
     public function index()
     {
-        $appointments = Appointment::with(['client','pet','service'])
+        $appointments = Appointment::with(['client','pet','service','block.calendar'])
             ->where('client_id', Auth::id())
             ->orderBy('date', 'asc')
             ->get();
@@ -106,7 +128,18 @@ class AppointmentController extends Controller
         $pets = Pet::where('owner_id', Auth::id())->get();
         $services = Service::where('active', true)->get();
 
-        return view('appointments.create', compact('pets','services'));
+        $blocks = Block::where('is_active', true)
+            ->where('is_booked', false)
+            ->whereHas('calendar', function ($q) {
+                $q->where('is_open', true)
+                  ->whereDate('date', '>=', now()->toDateString());
+            })
+            ->orderBy('calendar_id')
+            ->orderBy('start_time')
+            ->with('calendar')
+            ->get();
+
+        return view('appointments.create', compact('pets','services','blocks'));
     }
 
     public function store(Request $request)
@@ -114,21 +147,34 @@ class AppointmentController extends Controller
         $data = $request->validate([
             'pet_id'     => 'required|exists:pets,id',
             'service_id' => 'required|exists:services,id',
-            'date'       => 'required|date',
+            'block_id'   => 'required|exists:blocks,id',
             'reason'     => 'required|string|max:255',
         ]);
 
-        $data['client_id'] = Auth::id();
-        $data['active'] = true;
+        $block = Block::with('calendar')->findOrFail($data['block_id']);
 
-        Appointment::create($data);
+        if (! $block->is_active || $block->is_booked || ! $block->calendar->is_open) {
+            return back()->with('error', 'El horario seleccionado no está disponible.');
+        }
 
-        return redirect()->route('appointments.index')->with('success', 'La Cita ha sido creada correctamente');
+        $appointment = Appointment::create([
+            'client_id'  => Auth::id(),
+            'pet_id'     => $data['pet_id'],
+            'service_id' => $data['service_id'],
+            'block_id'   => $block->id,
+            'date'       => $block->calendar->date->format('Y-m-d').' '.$block->start_time,
+            'reason'     => $data['reason'],
+            'active'     => true,
+        ]);
+
+        $block->update(['is_booked' => true]);
+
+        return redirect()->route('appointments.index')->with('success', 'La cita ha sido creada correctamente');
     }
 
     public function show($id)
     {
-        $appointment = Appointment::with(['client','pet','service'])
+        $appointment = Appointment::with(['client','pet','service','block.calendar'])
             ->where('client_id', Auth::id())
             ->findOrFail($id);
 
@@ -151,7 +197,6 @@ class AppointmentController extends Controller
         $data = $request->validate([
             'pet_id'     => 'sometimes|exists:pets,id',
             'service_id' => 'sometimes|exists:services,id',
-            'date'       => 'sometimes|date',
             'reason'     => 'sometimes|string|max:255',
         ]);
 
@@ -163,9 +208,16 @@ class AppointmentController extends Controller
     public function deleteWeb($id)
     {
         $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
+
+        if ($appointment->block_id) {
+            $block = Block::find($appointment->block_id);
+            if ($block) {
+                $block->update(['is_booked' => false]);
+            }
+        }
+
         $appointment->update(['active' => false, 'reason' => 'Cancelled appointment']);
 
         return redirect()->route('appointments.index')->with('success', 'La Cita ha sido cancelada');
     }
-
 }

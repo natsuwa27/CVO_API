@@ -28,7 +28,15 @@
 
   <div class="mb-3">
     <label class="form-label">Fecha y hora</label>
-    <input type="datetime-local" name="date" class="form-control" value="{{ \Carbon\Carbon::parse($appointment->date)->format('Y-m-d\TH:i') }}">
+    <select name="block_id" class="form-select">
+      @foreach($blocks as $block)
+        <option value="{{ $block->id }}" @selected($appointment->block_id == $block->id)>
+          {{ $block->calendar->date->format('d/m/Y') }}
+          ({{ $block->calendar->date->locale('es')->isoFormat('dddd') }})
+          {{ $block->start_time }} - {{ $block->end_time }}
+        </option>
+      @endforeach
+    </select>
   </div>
 
   <div class="mb-3">

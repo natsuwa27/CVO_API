@@ -89,8 +89,10 @@ Route::middleware(['auth', 'role:3'])->group(function () {
 
 Route::post('/registro', [WebAuthController::class, 'webRegister']);
 
-Route::get('/calendars', [CalendarController::class, 'index'])->name('calendars.index');
-Route::post('/calendars/generate-month', [CalendarController::class, 'generateMonth'])->name('calendars.generateMonth');
-Route::get('/calendars/{calendar}', [CalendarController::class, 'show'])->name('calendars.show');
-Route::patch('/calendars/{calendar}/close', [CalendarController::class, 'closeDay'])->name('calendars.closeDay');
-Route::patch('/blocks/{block}/toggle', [CalendarController::class, 'toggleBlock'])->name('blocks.toggle');
+Route::middleware(['auth','role:1'])->group(function () {
+    Route::get('/calendars', [CalendarController::class, 'index'])->name('calendars.index');
+    Route::post('/calendars/generate-month', [CalendarController::class, 'generateMonth'])->name('calendars.generateMonth');
+    Route::get('/calendars/{calendar}', [CalendarController::class, 'show'])->name('calendars.show');
+    Route::patch('/calendars/{calendar}/close', [CalendarController::class, 'closeDay'])->name('calendars.closeDay');
+    Route::patch('/blocks/{block}/toggle', [CalendarController::class, 'toggleBlock'])->name('blocks.toggle');
+});
