@@ -11,29 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('calendars', function (Blueprint $table) {
+    Schema::create('calendars', function (Blueprint $table) {
             $table->id();
 
-            // Admin dueño del calendario (solo admin puede ver/usar esto)
-            $table->unsignedBigInteger('admin_id')->nullable();
-
-            // Día del calendario
+            // Día concreto del calendario
             $table->date('date');
 
-            // Horario general del día (opcional)
+            // Estado del día
+            $table->boolean('is_open')->default(true);   // abierto/cerrado
+            $table->boolean('is_special')->default(false); // true si tiene horario especial
+
+            // Horario del día (si es null, podrías usar el de calendar_settings)
             $table->time('start_time')->nullable();
             $table->time('end_time')->nullable();
 
-            // Estado del día
-            $table->string('status')->default('activo');
-
             $table->timestamps();
 
-            // Llave foránea hacia admins
-            $table->foreign('admin_id')
-                ->references('id')
-                ->on('admins')
-                ->onDelete('set null');
         });
     }
 

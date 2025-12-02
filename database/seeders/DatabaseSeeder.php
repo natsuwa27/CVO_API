@@ -5,8 +5,6 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-
-
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
@@ -21,7 +19,6 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             UserSeeder::class,
             ServiceSeeder::class,
-            AppointmentSeeder::class,
         ]);
     }
 }

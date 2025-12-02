@@ -11,24 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('blocks', function (Blueprint $table) {
+      Schema::create('blocks', function (Blueprint $table) {
             $table->id();
 
-            // Relación con el calendario
             $table->unsignedBigInteger('calendar_id');
 
-            // Hora de inicio y fin del bloque
             $table->time('start_time');
             $table->time('end_time');
 
-            // Si está disponible para citas
-            $table->boolean('is_available')->default(true);
+            // Estado del bloque
+            $table->boolean('is_active')->default(true); // admin lo apaga/prende
+            $table->boolean('is_booked')->default(false); // se ocupa cuando hay cita
 
             $table->timestamps();
 
             $table->foreign('calendar_id')
-                ->references('id')
-                ->on('calendars')
+                ->references('id')->on('calendars')
                 ->onDelete('cascade');
         });
     }

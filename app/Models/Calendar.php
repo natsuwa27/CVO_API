@@ -3,28 +3,33 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Calendar extends Model
 {
     use HasFactory;
 
+    protected $table = 'calendars';
+
     protected $fillable = [
-        'admin_id',
         'date',
+        'is_open',
+        'is_special',
         'start_time',
         'end_time',
-        'status',
     ];
 
-    // Un calendario pertenece a un admin
-    public function admin()
-    {
-        return $this->belongsTo(Admin::class);
-    }
+    protected $casts = [
+        'date'       => 'date',
+        'is_open'    => 'boolean',
+        'is_special' => 'boolean',
+    ];
 
-    // Un calendario tiene muchos bloques
+    /**
+     * Relación: un día tiene muchos bloques horarios.
+     */
     public function blocks()
     {
         return $this->hasMany(Block::class);
     }
+
 }
