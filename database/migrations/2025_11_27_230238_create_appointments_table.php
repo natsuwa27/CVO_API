@@ -14,12 +14,7 @@ return new class extends Migration
             $table->unsignedBigInteger('pet_id');
             $table->dateTime('date');
             $table->string('reason');
-            $table->enum('service_type', [
-                'consultation',
-                'vaccination',
-                'surgery',
-                'grooming'
-            ]);
+            $table->foreignId('service_id')->constrained('services')->onDelete('cascade');
             $table->boolean('active')->default(true);
             $table->timestamps();
 

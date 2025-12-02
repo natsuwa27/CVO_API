@@ -14,7 +14,7 @@ class Appointment extends Model
         'pet_id',
         'date',
         'reason',
-        'service_type',
+        'service_id',
         'active',
     ];
 
@@ -27,4 +27,10 @@ class Appointment extends Model
     {
         return $this->belongsTo(Pet::class);
     }
+
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
+    }
+
 }

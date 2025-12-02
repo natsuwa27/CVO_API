@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Appointment;
+use App\Models\Pet;
+use App\Models\Service;
 use Illuminate\Support\Facades\Auth;
 
 class AppointmentController extends Controller
@@ -86,4 +88,84 @@ class AppointmentController extends Controller
             'appointment' => $appointment
         ]);
     }
+
+
+
+    public function index()
+    {
+        $appointments = Appointment::with(['client','pet','service'])
+            ->where('client_id', Auth::id())
+            ->orderBy('date', 'asc')
+            ->get();
+
+        return view('appointments.index', compact('appointments'));
+    }
+
+    public function createForm()
+    {
+        $pets = Pet::where('owner_id', Auth::id())->get();
+        $services = Service::where('active', true)->get();
+
+        return view('appointments.create', compact('pets','services'));
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'pet_id'     => 'required|exists:pets,id',
+            'service_id' => 'required|exists:services,id',
+            'date'       => 'required|date',
+            'reason'     => 'required|string|max:255',
+        ]);
+
+        $data['client_id'] = Auth::id();
+        $data['active'] = true;
+
+        Appointment::create($data);
+
+        return redirect()->route('appointments.index')->with('success', 'La Cita ha sido creada correctamente');
+    }
+
+    public function show($id)
+    {
+        $appointment = Appointment::with(['client','pet','service'])
+            ->where('client_id', Auth::id())
+            ->findOrFail($id);
+
+        return view('appointments.show', compact('appointment'));
+    }
+
+    public function editForm($id)
+    {
+        $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
+        $pets = Pet::where('owner_id', Auth::id())->get();
+        $services = Service::where('active', true)->get();
+
+        return view('appointments.edit', compact('appointment','pets','services'));
+    }
+
+    public function updateWeb(Request $request, $id)
+    {
+        $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
+
+        $data = $request->validate([
+            'pet_id'     => 'sometimes|exists:pets,id',
+            'service_id' => 'sometimes|exists:services,id',
+            'date'       => 'sometimes|date',
+            'reason'     => 'sometimes|string|max:255',
+        ]);
+
+        $appointment->update($data);
+
+        return redirect()->route('appointments.index')->with('success', 'La Cita ha sido actualizada correctamente');
+    }
+
+    public function deleteWeb($id)
+    {
+        $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
+        $appointment->update(['active' => false, 'reason' => 'Cancelled appointment']);
+
+        return redirect()->route('appointments.index')->with('success', 'La Cita ha sido cancelada');
+    }
+
 }
