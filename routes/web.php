@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebAuthController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AppointmentController;
 
 
 Route::get('/', function () {
@@ -47,3 +48,16 @@ Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 
 
 Route::post('/registro', [WebAuthController::class, 'webRegister']);
+
+//carlos
+Route::middleware(['auth', 'role:3'])->group(function () {
+    Route::prefix('appointments')->group(function () {
+        Route::get('/index', [AppointmentController::class, 'index'])->name('appointments.index');
+        Route::get('/create', [AppointmentController::class, 'createForm'])->name('appointments.create');
+        Route::post('/store', [AppointmentController::class, 'store'])->name('appointments.store');
+        Route::get('/show/{id}', [AppointmentController::class, 'show'])->name('appointments.show');
+        Route::get('/edit/{id}', [AppointmentController::class, 'editForm'])->name('appointments.edit');
+        Route::put('/updateWeb/{id}', [AppointmentController::class, 'updateWeb'])->name('appointments.update');
+        Route::delete('/deleteWeb/{id}', [AppointmentController::class, 'deleteWeb'])->name('appointments.delete');
+    });
+});
