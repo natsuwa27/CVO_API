@@ -2,116 +2,249 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Calendar;
 use App\Models\Block;
+use App\Models\Calendar;
+use App\Models\CalendarSetting;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
 class CalendarController extends Controller
 {
       /**
-     * Mostrar todos los calendarios o filtrar por fecha.
-     * GET /api/calendars
-     * GET /api/calendars?date=2025-12-01
+     * Mostrar el calendario de un mes.
+     * GET /calendars?year=2025&month=12
      */
     public function index(Request $request)
     {
-        $date = $request->query('date');
+        $year = (int) $request->input('year', now()->year);
+        $month = (int) $request->input('month', now()->month);
 
-        $query = Calendar::with('blocks');
+        $startOfMonth = Carbon::create($year, $month, 1)->startOfDay();
+        $endOfMonth   = $startOfMonth->copy()->endOfMonth();
 
-        if ($date) {
-            $query->where('date', $date);
+        // Obtenemos todos los días generados de ese mes
+        $calendars = Calendar::whereBetween('date', [
+                $startOfMonth->toDateString(),
+                $endOfMonth->toDateString(),
+            ])
+            ->orderBy('date')
+            ->get()
+            ->keyBy(fn (Calendar $calendar) => $calendar->date->format('Y-m-d'));
+
+        return view('admin.calendar.index', [
+            'year'         => $year,
+            'month'        => $month,
+            'startOfMonth' => $startOfMonth,
+            'endOfMonth'   => $endOfMonth,
+            'calendars'    => $calendars,
+        ]);
+    }
+
+    /**
+     * Generar el calendario y bloques de un mes según la configuración activa.
+     * POST /calendars/generate-month
+     */
+    public function generateMonth(Request $request)
+    {
+        $data = $request->validate([
+            'year'  => ['required', 'integer', 'min:2000', 'max:2100'],
+            'month' => ['required', 'integer', 'min:1', 'max:12'],
+        ]);
+
+        $year  = (int) $data['year'];
+        $month = (int) $data['month'];
+
+        // Obtenemos la configuración activa (por ahora la primera)
+        $settings = CalendarSetting::where('is_active', true)->first();
+
+        // Si no existe, creamos una por defecto (por si acaso).
+        if (! $settings) {
+            $settings = CalendarSetting::create([
+                'block_duration' => 30,
+                'start_time'     => '08:00:00',
+                'end_time'       => '18:00:00',
+                'working_days'   => 'mon,tue,wed,thu,fri',
+                'is_active'      => true,
+            ]);
         }
 
-        return response()->json([
-            'status' => 200,
-            'data'   => $query->get(),
-        ], 200);
+        $startOfMonth = Carbon::create($year, $month, 1)->startOfDay();
+        $endOfMonth   = $startOfMonth->copy()->endOfMonth();
+
+        $workingDays  = $settings->working_days_array; // ['mon','tue',...]
+
+        DB::transaction(function () use ($startOfMonth, $endOfMonth, $workingDays, $settings) {
+
+            // Borramos solo días FUTUROS de ese rango (no tocamos historial pasado)
+            Calendar::whereBetween('date', [
+                    $startOfMonth->toDateString(),
+                    $endOfMonth->toDateString(),
+                ])
+                ->whereDate('date', '>=', now()->toDateString())
+                ->delete();
+
+            $currentDay = $startOfMonth->copy();
+
+            while ($currentDay->lte($endOfMonth)) {
+
+                $dayOfWeek = strtolower($currentDay->format('D')); // mon, tue, ...
+
+                $isWorkingDay    = in_array($dayOfWeek, $workingDays, true);
+                $isFutureOrToday = $currentDay->gte(now()->startOfDay());
+
+                $isOpen = $isWorkingDay && $isFutureOrToday;
+
+                $calendar = Calendar::create([
+                    'date'       => $currentDay->toDateString(),
+                    'is_open'    => $isOpen,
+                    'is_special' => false,
+                    'start_time' => $settings->start_time,
+                    'end_time'   => $settings->end_time,
+                ]);
+
+                if ($isOpen) {
+                    $this->generateBlocksForDay($calendar, (int) $settings->block_duration);
+                }
+
+                $currentDay->addDay();
+            }
+        });
+
+        return back()->with('success', 'Calendario del mes generado correctamente.');
     }
 
     /**
-     * Crear un calendario.
-     * POST /api/calendars
+     * Generar bloques para un día concreto, según la duración.
      */
-    public function store(Request $request)
+    private function generateBlocksForDay(Calendar $calendar, int $blockDuration): void
     {
-        $request->validate([
-            'admin_id'   => 'nullable|integer',
-            'date'       => 'required|date',
-            'start_time' => 'nullable|date_format:H:i',
-            'end_time'   => 'nullable|date_format:H:i',
-        ]);
+        // Si un día no tiene horario configurado, no generamos nada
+        if (empty($calendar->start_time) || empty($calendar->end_time)) {
+            return;
+        }
 
-        $calendar = Calendar::create($request->all());
+        $start = Carbon::parse($calendar->date->toDateString().' '.$calendar->start_time);
+        $end   = Carbon::parse($calendar->date->toDateString().' '.$calendar->end_time);
 
-        return response()->json([
-            'status'  => 201,
-            'message' => 'Calendario creado correctamente',
-            'data'    => $calendar,
-        ], 201);
+        while ($start->lt($end)) {
+            $slotStart = $start->copy();
+            $slotEnd   = $start->copy()->addMinutes($blockDuration);
+
+            if ($slotEnd->gt($end)) {
+                break;
+            }
+
+            Block::create([
+                'calendar_id' => $calendar->id,
+                'start_time'  => $slotStart->format('H:i:s'),
+                'end_time'    => $slotEnd->format('H:i:s'),
+                'is_active'   => true,
+                'is_booked'   => false,
+            ]);
+
+            // IMPORTANTE: pasar un int, no string
+            $start->addMinutes($blockDuration);
+        }
     }
 
     /**
-     * Agregar un bloque a un calendario.
-     * POST /api/calendars/{calendar}/blocks
+     * Mostrar un día con todos sus bloques.
+     * GET /calendars/{calendar}
      */
-    public function addBlock(Request $request, $calendarId)
+    public function show(Calendar $calendar)
     {
-        $request->validate([
-            'start_time'   => 'required|date_format:H:i',
-            'end_time'     => 'required|date_format:H:i',
-            'is_available' => 'boolean',
-        ]);
+        $calendar->load(['blocks' => function ($query) {
+            $query->orderBy('start_time');
+        }]);
 
-        $calendar = Calendar::findOrFail($calendarId);
-
-        $block = Block::create([
-            'calendar_id' => $calendar->id,
-            'start_time'  => $request->start_time,
-            'end_time'    => $request->end_time,
-            'is_available'=> $request->input('is_available', true),
-        ]);
-
-        return response()->json([
-            'status'  => 201,
-            'message' => 'Bloque creado correctamente',
-            'data'    => $block,
-        ], 201);
+         return view('admin.calendar.show', compact('calendar'));
     }
 
-    /**
-     * Actualizar un bloque.
-     * PUT /api/blocks/{block}
-     */
-    public function updateBlock(Request $request, $blockId)
-    {
-        $request->validate([
-            'start_time'   => 'sometimes|date_format:H:i',
-            'end_time'     => 'sometimes|date_format:H:i',
-            'is_available' => 'sometimes|boolean',
-        ]);
+    public function closeDay(Calendar $calendar)
+{
+    $today = Carbon::today();
 
-        $block = Block::findOrFail($blockId);
-        $block->update($request->all());
-
-        return response()->json([
-            'status'  => 200,
-            'message' => 'Bloque actualizado correctamente',
-            'data'    => $block,
-        ], 200);
+    // No permitir modificar días que ya pasaron
+    if ($calendar->date->lt($today)) {
+        return back()->with('error', 'No puedes modificar un día que ya pasó.');
     }
 
-    /**
-     * Eliminar un bloque.
-     * DELETE /api/blocks/{block}
-     */
-    public function destroyBlock($blockId)
-    {
-        $block = Block::findOrFail($blockId);
-        $block->delete();
+    // Día de la semana: 1 = lun, 7 = dom
+    $weekday = $calendar->date->dayOfWeekIso;
 
-        return response()->json([
-            'status'  => 200,
-            'message' => 'Bloque eliminado correctamente',
-        ], 200);
+    // ❌ NO permitir reabrir fines de semana
+    // Si el día es sábado o domingo Y está cerrado → NO permitir abrirlo
+    if ($weekday >= 6 && ! $calendar->is_open) {
+        return back()->with('error', 'Este día es fin de semana y no está configurado como día laboral. No puede reabrirse.');
+    }
+
+    // ---------- TOGGLE DEL ESTADO ----------
+    if ($calendar->is_open) {
+        // Estaba ABIERTO → lo CERRAMOS
+        DB::transaction(function () use ($calendar) {
+            $calendar->update([
+                'is_open' => false,
+            ]);
+
+            // Desactivar todos los bloques
+            $calendar->blocks()->update([
+                'is_active' => false,
+            ]);
+        });
+
+        return back()->with('success', 'El día se cerró correctamente y se desactivaron todos los bloques.');
+    } else {
+        // Estaba CERRADO → lo REABRIMOS (solo lunes-viernes)
+        DB::transaction(function () use ($calendar) {
+            $calendar->update([
+                'is_open' => true,
+            ]);
+
+            // Reactivar todos los bloques
+            $calendar->blocks()->update([
+                'is_active' => true,
+            ]);
+        });
+
+        return back()->with('success', 'El día se reabrió correctamente y se activaron todos los bloques.');
+    }
+}
+
+    /**
+     * Alternar el estado de un bloque (activar/desactivar).
+     * PATCH /blocks/{block}/toggle
+     */
+    public function toggleBlock(Block $block)
+    {
+       $calendar = $block->calendar; // gracias a la relación
+
+    if (! $calendar) {
+        return back()->with('error', 'No se encontró el día asociado a este bloque.');
+    }
+
+    $today = Carbon::today();
+
+    // No permitir cambios en días pasados
+    if ($calendar->date->lt($today)) {
+        return back()->with('error', 'No puedes modificar bloques de un día que ya pasó.');
+    }
+
+    // No permitir cambios si el día está cerrado
+    if (! $calendar->is_open) {
+        return back()->with('error', 'No puedes modificar bloques de un día cerrado.');
+    }
+
+    // Toggle simple
+    $block->update([
+        'is_active' => ! $block->is_active,
+    ]);
+
+    return back()->with(
+        'success',
+        $block->is_active
+            ? 'Bloque activado correctamente.'
+            : 'Bloque desactivado correctamente.'
+    );
     }
 }

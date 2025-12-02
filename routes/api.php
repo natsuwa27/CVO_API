@@ -28,8 +28,6 @@ Route::prefix('roles')->group(function () {
     Route::get('/{id}', [RoleController::class, 'readOne']);
     Route::put('/{id}', [RoleController::class, 'update']);
 });
-
-<<<<<<< HEAD
 Route::prefix('appointments')->group(function () {
     Route::post('/create', [AppointmentController::class, 'create']);
     Route::get('/read/{id}', [AppointmentController::class, 'read']);
@@ -38,7 +36,6 @@ Route::prefix('appointments')->group(function () {
     Route::delete('/delete/{id}', [AppointmentController::class, 'delete']);
 });
 Route::get('/pets', [PetController::class, 'apiIndex']);
-=======
 // Calendarios
 Route::get('/calendars', [CalendarController::class, 'index']);
 Route::post('/calendars', [CalendarController::class, 'store']);
@@ -47,4 +44,3 @@ Route::post('/calendars', [CalendarController::class, 'store']);
 Route::post('/calendars/{calendar}/blocks', [CalendarController::class, 'addBlock']);
 Route::put('/blocks/{block}', [CalendarController::class, 'updateBlock']);
 Route::delete('/blocks/{block}', [CalendarController::class, 'destroyBlock']);
->>>>>>> c62662a (se hizo las migraciones, controller y modelos de configuracion de calendario de administrador)

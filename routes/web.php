@@ -6,9 +6,9 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\PetController;
+use App\Http\Controllers\CalendarController;
 
-
-Route::get('/', function () {
+Route::get('/bienvenida', function () {
     return view('auth.bienvenida');
 })->name('bienvenida');
 
@@ -49,7 +49,6 @@ Route::middleware(['auth', \App\Http\Middleware\RoleMiddleware::class . ':3'])->
 Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 
 
-
 Route::post('/registro', [WebAuthController::class, 'webRegister']);
 
 //carlos
@@ -64,3 +63,11 @@ Route::middleware(['auth', 'role:3'])->group(function () {
         Route::delete('/deleteWeb/{id}', [AppointmentController::class, 'deleteWeb'])->name('appointments.delete');
     });
 });
+
+Route::post('/registro', [WebAuthController::class, 'webRegister']);
+
+Route::get('/calendars', [CalendarController::class, 'index'])->name('calendars.index');
+Route::post('/calendars/generate-month', [CalendarController::class, 'generateMonth'])->name('calendars.generateMonth');
+Route::get('/calendars/{calendar}', [CalendarController::class, 'show'])->name('calendars.show');
+Route::patch('/calendars/{calendar}/close', [CalendarController::class, 'closeDay'])->name('calendars.closeDay');
+Route::patch('/blocks/{block}/toggle', [CalendarController::class, 'toggleBlock'])->name('blocks.toggle');
