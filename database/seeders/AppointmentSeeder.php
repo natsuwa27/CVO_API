@@ -15,7 +15,7 @@ class AppointmentSeeder extends Seeder
                 'pet_id'       => 1, 
                 'date'         => now()->addDays(2),
                 'reason'       => 'General checkup',
-                'service_type' => 'consultation',
+                'service_id' => 1,
                 'active'       => true,
             ],
             [
@@ -23,7 +23,7 @@ class AppointmentSeeder extends Seeder
                 'pet_id'       => 3,
                 'date'         => now()->addDays(5),
                 'reason'       => 'Vaccination booster',
-                'service_type' => 'vaccination',
+                'service_id' => 2,
                 'active'       => true,
             ],
             [
@@ -31,7 +31,7 @@ class AppointmentSeeder extends Seeder
                 'pet_id'       => 2,
                 'date'         => now()->addDays(10),
                 'reason'       => 'Surgery follow-up',
-                'service_type' => 'surgery',
+                'service_id' => 3,
                 'active'       => true,
             ],
         ]);
