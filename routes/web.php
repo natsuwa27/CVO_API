@@ -67,6 +67,34 @@ Route::middleware(['auth', \App\Http\Middleware\RoleMiddleware::class . ':3'])->
     Route::get('/cliente/registro_mascota', [PetController::class, 'create'])->name('pets.create');
     Route::post('/cliente/registro_mascota', [PetController::class, 'store'])->name('pets.store');
     
+    
+});
+
+
+//ariel
+Route::middleware(['auth', 'role:3'])->group(function () {
+    Route::prefix('pets')->group(function () {
+        // Lista de mascotas
+        Route::get('/', [PetController::class, 'index'])->name('cliente.homecliente');
+
+        // Formulario de registro
+        Route::get('/create', [PetController::class, 'create'])->name('pets.create');
+
+        // Guardar nueva mascota
+        Route::post('/store', [PetController::class, 'store'])->name('pets.store');
+
+        // Ver detalle de mascota
+        Route::get('/{id}', [PetController::class, 'show'])->name('pets.show');
+
+        // Formulario de edición
+        Route::get('/{id}/edit', [PetController::class, 'edit'])->name('pets.edit');
+
+        // Actualizar mascota
+        Route::put('/{id}', [PetController::class, 'update'])->name('pets.update');
+
+        // Eliminar mascota
+        Route::delete('/{id}', [PetController::class, 'destroy'])->name('pets.destroy');
+    });
 });
 
 Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
