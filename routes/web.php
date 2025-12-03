@@ -8,7 +8,7 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\CalendarController;
 
-Route::get('/bienvenida', function () {
+Route::get('/', function () {
     return view('auth.bienvenida');
 })->name('bienvenida');
 

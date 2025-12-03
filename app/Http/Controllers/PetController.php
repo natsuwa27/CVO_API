@@ -34,6 +34,8 @@ class PetController extends Controller
             'sex' => 'required|in:male,female',
             'age' => 'nullable|integer',
             'photo' => 'nullable|image|mimes:jpeg,png|max:5000', // Max 5MB
+            'active'   => 'nullable|boolean'
+
         ]);
 
         $data['owner_id'] = Auth::id();
@@ -85,6 +87,7 @@ class PetController extends Controller
             'sex' => 'required|in:male,female',
             'age' => 'nullable|integer',
             'photo' => 'nullable|image|mimes:jpeg,png|max:5000',
+            'active'   => 'nullable|boolean'
         ]);
 
         if ($request->hasFile('photo')) {

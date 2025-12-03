@@ -51,6 +51,7 @@
         .hero { 
             width: 100%; 
             height: 300px;
+            /* Se mantiene la ruta asset() para la imagen de fondo */
             background: linear-gradient(rgba(0, 123, 255, 0.7), rgba(0, 123, 255, 0.7)), url('{{ asset("css/banner-mascotas.jpg") }}') center/cover;
             background-attachment: fixed;
             position: relative; 
@@ -83,6 +84,10 @@
             transition: transform 0.3s, box-shadow 0.3s;
             cursor: pointer;
             height: 100%;
+            background-color: white; /* Asegura fondo blanco */
+            display: flex; /* Añadido para mejor control interno */
+            flex-direction: column;
+            justify-content: space-between;
         }
         .mascota-card:hover {
             transform: translateY(-5px);
@@ -102,6 +107,7 @@
             justify-content: center;
             flex-direction: column;
             text-decoration: none;
+            height: 100%; /* Asegura que la tarjeta de añadir tenga altura completa */
         }
         .mascota-add-card:hover {
             background: var(--section-bg);
@@ -111,6 +117,72 @@
             font-size: 1.25rem;
             margin-top: 10px;
         }
+        
+        /* ESTILOS DE BOTONES SIN BOOTSTRAP */
+        .mascota-actions {
+            display: flex;
+            flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas pequeñas */
+            gap: 8px; /* Espacio entre botones */
+            margin-top: 15px;
+        }
+
+        .custom-btn {
+            /* Estilos base */
+            flex-grow: 1;
+            font-size: 0.85rem;
+            padding: 8px 6px;
+            border-radius: 20px; /* Bordes más redondeados tipo píldora */
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            border: 2px solid transparent; /* Base para el borde */
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            white-space: nowrap; 
+        }
+        
+        /* Estilos específicos */
+
+        /* Expediente (Primary Color) - Botón relleno */
+        .custom-btn-expediente {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        .custom-btn-expediente:hover {
+            background-color: #0056b3; /* Tono más oscuro de azul */
+            color: white;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Editar (Secondary Color) - Botón Outline (para diferenciar) */
+        .custom-btn-editar {
+            background-color: white;
+            color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        .custom-btn-editar:hover {
+            background-color: var(--secondary-color);
+            color: white;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Eliminar (Danger Color) - Botón relleno */
+        .custom-btn-eliminar {
+            background-color: #dc3545; 
+            color: white;
+            border-color: #dc3545;
+        }
+        .custom-btn-eliminar:hover {
+            background-color: #c82333; /* Tono más oscuro de rojo */
+            color: white;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+        /* FIN ESTILOS DE BOTONES SIN BOOTSTRAP */
 
         /* Footer */
         footer { 
@@ -125,6 +197,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
+        <!-- RUTA RESTAURADA: Logo -->
         <a href="#" class="navbar-brand font-weight-bold">
             <img src="{{ asset('css/logo.jpg') }}" width="45" alt="Logo Veterinaria"> Veterinaria del Oriente
         </a>
@@ -136,7 +209,6 @@
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item active"><a class="nav-link" href="#">Inicio</a></li>
                 <li class="nav-item"><a class="nav-link" href="#">Mis Mascotas</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Agendar Cita</a></li>
                 <li class="nav-item"><a class="nav-link" href="#">Sobre Nosotros</a></li>
                 <li class="nav-item"><a class="nav-link" href="#">Perfil</a></li>
                 <li class="nav-item ml-lg-3">
@@ -154,63 +226,72 @@
 
 <div class="hero">
     <div class="container">
-        <h1 class="hero-title">¡Hola, {{ Auth::user()->name }}!</h1>
+        <h1 class="hero-title">¡Hola, {{ Auth::user()->name }}!</h1> 
         <p class="lead font-weight-light">Bienvenido a tu panel. Cuidemos juntos de tus mascotas.</p>
     </div>
 </div>
 
 <main class="container">
 
-    <section class="section-box">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="text-primary font-weight-bold">🐾 Mis Mascotas</h3>
-            <a href="#" class="btn btn-secondary"><i class="fas fa-plus-circle"></i> Agregar Nueva Mascota</a>
+  <section class="section-box">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-primary font-weight-bold">🐾 Mis Mascotas</h3>
+    </div>
+
+    <div class="row">
+
+        {{-- Tarjeta de agregar mascota --}}
+        <div class="col-6 col-md-3 mb-4">
+            <a href="{{ route('pets.create') }}" class="mascota-add-card p-3 text-center">
+                <i class="fas fa-paw fa-3x"></i>
+                <h4>Agregar Mascota</h4>
+            </a>
         </div>
-        
-        <div class="row">
-            <div class="col-6 col-md-3 mb-4">
-                <a href="#" class="mascota-add-card p-3 text-center" style="height: 100%;">
-                    <i class="fas fa-paw fa-3x"></i>
-                    <h4>Agregar Mascota</h4>
-                    <p class="small mb-0">¡Empieza su historial!</p>
-                </a>
-            </div>
 
-            <div class="col-6 col-md-3 mb-4">
-                <div class="mascota-card text-center">
-                    <img src="{{ asset('css/perrito.jpg') }}" class="mascota-img" alt="Foto de Toby">
-                    <div class="p-3">
-                        <h5 class="font-weight-bold mb-1">Toby</h5>
-                        <p class="text-muted small">Última cita: 01/Nov/2025</p>
-                        <a href="#" class="btn btn-sm btn-outline-primary btn-block">Ver Expediente</a>
-                    </div>
-                </div>
-            </div>
+        {{-- Mascotas reales del usuario --}}
+        @foreach ($pets as $pet)
+        <div class="col-6 col-md-3 mb-4">
+            <div class="mascota-card text-center">
 
-            <div class="col-6 col-md-3 mb-4">
-                <div class="mascota-card text-center">
-                    <img src="{{ asset('css/gato.jpg') }}" class="mascota-img" alt="Foto de Furcio">
-                    <div class="p-3">
-                        <h5 class="font-weight-bold mb-1">Furcio</h5>
-                        <p class="text-muted small">Última cita: 15/Oct/2025</p>
-                        <a href="#" class="btn btn-sm btn-outline-primary btn-block">Ver Expediente</a>
+                <!-- Se mantiene la ruta de la mascota -->
+                <img 
+                    src="{{ $pet->photo_path ? asset('storage/'.$pet->photo_path) : 'https://placehold.co/400x150/007bff/ffffff?text=FOTO+DE+MASCOTA' }}" 
+                    class="mascota-img"
+                    alt="Foto de {{ $pet->name }}"
+                >
+
+                <div class="p-3 d-flex flex-column justify-content-between flex-grow-1">
+                    <h5 class="font-weight-bold mb-3">{{ $pet->name }}</h5>
+
+                    <!-- Contenedor de Acciones Flexbox -->
+                    <div class="mascota-actions">
+                        
+                        <a href="{{ route('pets.show', $pet->id) }}" class="custom-btn custom-btn-expediente">
+                            <i class="fas fa-file-alt"></i> Expediente
+                        </a>
+
+                        <a href="{{ route('pets.edit', $pet->id) }}" class="custom-btn custom-btn-editar">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+
+                        <form action="{{ route('pets.destroy', $pet->id) }}" method="POST" class="d-inline flex-grow-1">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="custom-btn custom-btn-eliminar">
+                                <i class="fas fa-trash-alt"></i> Eliminar
+                            </button>
+                        </form>
                     </div>
+                    <!-- Fin Nuevo Contenedor de Acciones -->
                 </div>
-            </div>
-            
-            <div class="col-6 col-md-3 mb-4">
-                <div class="mascota-card text-center">
-                    <img src="{{ asset('css/perrito2.jpg') }}" class="mascota-img" alt="Foto de Ferríño">
-                    <div class="p-3">
-                        <h5 class="font-weight-bold mb-1">Ferríño</h5>
-                        <p class="text-muted small">Última cita: 20/Nov/2025</p>
-                        <a href="#" class="btn btn-sm btn-outline-primary btn-block">Ver Expediente</a>
-                    </div>
-                </div>
-            </div>
 
             </div>
-    </section>
+        </div>
+        @endforeach
+
+    </div>
+</section>
+
 
     <hr>
 
@@ -221,11 +302,12 @@
                 <p style="font-size:18px;">¿Necesitas una consulta, baño o guardería? Programa tu próxima visita o revisa el estado de tus citas registradas fácilmente.</p>
                 
                 <div class="alert alert-warning mt-3">
-                    Tienes una cita pendiente para Toby el 15/Dic/2025 a las 11:00 AM.
+                    Tenes una cita pendiente para Copito el 15/Dic/2025 a las 11:00 AM.
                 </div>
             </div>
             <div class="col-md-5 text-center">
                 <div class="p-3 border rounded shadow-sm bg-light">
+                    <!-- Manteniendo clases Bootstrap en la sección de Citas para consistencia con el diseño del resto del panel -->
                     <a href="#" class="btn btn-success btn-lg btn-block mb-3"><i class="far fa-calendar-alt"></i> Programar Nueva Cita</a>
                     <a href="#" class="btn btn-outline-primary btn-block"><i class="fas fa-history"></i> Ver Historial de Citas</a>
                 </div>
@@ -249,8 +331,9 @@
             <div class="col-md-6 mb-4">
                 <div class="section-box bg-white">
                     <h4 class="font-weight-bold text-success">📍 ¿Dónde estamos?</h4>
-                    <p class="lead mb-2">**Periférico 9344, Torreón**</p>
+                    <p class="lead mb-2">Periférico 9344, Torreón</p>
                     <div class="mb-3">
+                        <!-- RUTA RESTAURADA: Mapa -->
                         <img src="{{ asset('css/mapa.jpg') }}" class="img-fluid rounded shadow" alt="Mapa de ubicación">
                     </div>
                     <a href="#" class="btn btn-warning btn-block font-weight-bold mt-3"><i class="fas fa-phone"></i> ¡Llámanos! (123) 456-7890</a>
