@@ -9,11 +9,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
-
     <style>
         :root {
-            --primary-color: #007bff; /* Azul vibrante */
-            --admin-color: #3f98ff; /* Azul medio para admin */
+            --primary-color: #007bff;
+            --admin-color: #3f98ff;
             --danger-color: #dc3545;
             --success-color: #28a745;
             --warning-color: #ffc107;
@@ -24,13 +23,12 @@
         body { 
             background: var(--bg-light); 
             font-family: 'Poppins', sans-serif; 
-            padding-top: 130px; /* Ajuste para el encabezado grande */
+            padding-top: 130px;
         }
 
-        /* Encabezado Fijo */
         .navbar-fixed { 
             width: 100%;
-            height: 110px; /* Un poco más alto */
+            height: 110px;
             background-color: var(--admin-color);
             position: fixed;
             top: 0;
@@ -40,8 +38,8 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 50px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2); /* Sombra más fuerte */
-            border-radius: 0 0 20px 20px; /* Borde inferior más pronunciado */
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 0 0 20px 20px;
         }
         .navbar-fixed a { 
             color: white; 
@@ -52,7 +50,7 @@
             transition: color 0.3s;
         }
         .navbar-fixed a:hover { 
-            color: var(--warning-color); /* Amarillo al pasar el ratón */
+            color: var(--warning-color);
             text-decoration: none; 
         }
         .navbar-fixed .logo-text {
@@ -61,15 +59,13 @@
             font-weight: 700;
         }
 
-        /* Contenedor de la Tabla */
         .table-container { 
-            background: var(--card-bg, white); 
+            background: white; 
             padding: 30px; 
             border-radius: 15px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Sombra más moderna */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        /* Estilos de Botones */
         .btn-success { background-color: var(--success-color) !important; border-color: var(--success-color) !important; }
         .btn-info { background-color: var(--info-color) !important; border-color: var(--info-color) !important; }
         .btn-warning { background-color: var(--warning-color) !important; border-color: var(--warning-color) !important; color: #333 !important; }
@@ -83,9 +79,8 @@
             border-radius: 0.2rem;
         }
 
-        /* Estilo de la Tabla */
         .table thead th {
-            background-color: #e9ecef; /* Fondo claro para la cabecera */
+            background-color: #e9ecef;
             color: #495057;
             font-weight: 600;
             border-bottom: 2px solid #dee2e6;
@@ -94,7 +89,6 @@
             background-color: #f8f9fa;
         }
 
-        /* Modal */
         .modal-header-custom {
             background-color: var(--primary-color);
             color: white;
@@ -113,13 +107,11 @@
         }
 
         .modal {
-    z-index: 9999 !important; /* el modal encima de todo */
-}
-
-.modal-backdrop {
-    z-index: 9998 !important; /* fondo oscurecido justo debajo */
-}
-
+            z-index: 9999 !important;
+        }
+        .modal-backdrop {
+            z-index: 9998 !important;
+        }
     </style>
 </head>
 
@@ -135,6 +127,10 @@
         <a href="#"><i class="fas fa-users-cog mr-1"></i> Usuarios</a>
         <a href="#"><i class="fas fa-chart-bar mr-1"></i> Reportes</a>
         <a href="#"><i class="fas fa-user-circle mr-1"></i> Perfil</a>
+        <!-- NUEVO BOTÓN PARA CALENDARIO -->
+        <a href="{{ route('calendars.index') }}" class="btn btn-info btn-sm ml-3">
+            <i class="fas fa-calendar-alt"></i> Editar Calendario
+        </a>
 
         <form action="{{ route('logout') }}" method="POST" style="display:inline; margin-left: 20px;">
             @csrf
@@ -149,7 +145,6 @@
     <h2 class="font-weight-bold mb-4 text-dark">Bienvenido, {{ Auth::user()->name }}</h2>
 
     <div class="table-container">
-
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="font-weight-bold text-primary"><i class="fas fa-table mr-2"></i> Gestión de Usuarios</h4>
 
@@ -197,7 +192,6 @@
 
                         <td>
                             @if($user->id !== Auth::id())
-
                                 <button 
                                     class="btn btn-info btn-sm" 
                                     data-toggle="modal" 
@@ -221,12 +215,10 @@
                                         </button>
                                     </form>
                                 @endif
-
                             @else
                                 <span class="text-muted small">Tú</span>
                             @endif
                         </td>
-
                     </tr>
                     @endforeach
                 </tbody>
@@ -234,150 +226,3 @@
         </div>
     </div>
 </div>
-
-
-<div class="modal fade" id="crearUsuarioModal" tabindex="-1">
-  <div class="modal-dialog modal-lg"> 
-    <div class="modal-content">
-
-      <div class="modal-header modal-header-custom">
-        <h5 class="modal-title"><i class="fas fa-user-plus mr-2"></i> Crear Nuevo Usuario</h5>
-        <button type="button" class="close" data-dismiss="modal"><span class="text-white">&times;</span></button>
-      </div>
-
-      <div class="modal-body">
-        <form action="{{ route('admin.storeusuario') }}" method="POST">
-          @csrf
-
-          <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Nombre</label>
-                    <input type="text" name="name" class="form-control" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" class="form-control" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Contraseña</label>
-                    <input type="password" name="password" class="form-control" required>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Rol</label>
-                    <select name="role_id" class="form-control" required>
-                      @foreach($roles as $role)
-                        <option value="{{ $role->id }}">{{ $role->description }}</option>
-                      @endforeach
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Teléfono</label>
-                    <input type="text" name="phone" class="form-control">
-                </div>
-
-                <div class="form-group">
-                    <label>Dirección</label>
-                    <input type="text" name="address" class="form-control">
-                </div>
-            </div>
-          </div>
-
-          <div class="mt-3 text-right">
-            <button type="submit" class="btn btn-success font-weight-bold">
-                <i class="fas fa-check-circle"></i> Confirmar Creación
-            </button>
-          </div>
-        </form>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-
-@foreach($usuarios as $user)
-<div class="modal fade" id="editarUsuarioModal{{ $user->id }}" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-
-      <div class="modal-header modal-header-custom">
-        <h5 class="modal-title"><i class="fas fa-user-edit mr-2"></i> Actualizar Usuario: {{ $user->name }}</h5>
-        <button type="button" class="close" data-dismiss="modal"><span class="text-white">&times;</span></button>
-      </div>
-
-      <div class="modal-body">
-
-        <form action="{{ route('admin.updateusuario', $user->id) }}" method="POST">
-            @csrf
-            @method('PUT')
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label>Nombre</label>
-                        <input type="text" name="name" class="form-control" value="{{ $user->name }}" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" name="email" class="form-control" value="{{ $user->email }}" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Rol</label>
-                        <select name="role_id" class="form-control">
-                            @foreach($roles as $role)
-                                <option value="{{ $role->id }}" {{ $user->role_id == $role->id ? 'selected' : '' }}>
-                                    {{ $role->description }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label>Teléfono</label>
-                        <input type="text" name="phone" class="form-control" value="{{ $user->phone }}">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Dirección</label>
-                        <input type="text" name="address" class="form-control" value="{{ $user->address }}">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Nueva Contraseña (Opcional)</label>
-                        <input type="password" name="password" class="form-control" placeholder="Dejar vacío para no cambiar">
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-3 text-right">
-                <button type="submit" class="btn btn-info font-weight-bold">
-                    <i class="fas fa-save"></i> Guardar Cambios
-                </button>
-            </div>
-        </form>
-
-      </div>
-
-    </div>
-  </div>
-</div>
-@endforeach
-
-
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
-
-</body>
-</html>
-

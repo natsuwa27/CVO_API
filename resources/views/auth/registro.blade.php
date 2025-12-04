@@ -12,11 +12,11 @@
 
     <style>
         :root {
-            --primary-color: #007bff; /* Azul vibrante */
-            --navbar-color: #3f98ff; /* Azul claro */
+            --primary-color: #007bff;
+            --navbar-color: #3f98ff;
             --bg-light: #f4f9ff;
             --card-bg: white;
-            --button-color: #28a745; /* Verde para la acción de registro */
+            --button-color: #28a745;
         }
 
         body {
@@ -26,10 +26,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-top: 80px; /* Espacio para la barra superior */
+            padding-top: 80px;
         }
 
-        /* Encabezado fijo */
         #BarraTop {
             position: fixed;
             top: 0;
@@ -45,18 +44,16 @@
             margin: 0;
         }
         
-        /* Contenedor principal del formulario */
         .registro-container {
             background-color: var(--card-bg);
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
             padding: 30px;
             width: 90%;
-            max-width: 850px; /* Más ancho para las dos columnas */
+            max-width: 850px;
             margin-bottom: 40px;
         }
 
-        /* Estilos de inputs y labels */
         label {
             display: block;
             font-weight: 500;
@@ -78,7 +75,6 @@
             outline: none;
         }
 
-        /* Botón de Submit */
         .btn-registro {
             padding: 12px 30px;
             background-color: var(--button-color);
@@ -95,13 +91,11 @@
             transform: translateY(-1px);
         }
         
-        /* Estilos para mensajes de error */
         .alert-danger, .alert-success {
             border-radius: 8px;
             font-size: 0.95rem;
             margin-bottom: 20px;
         }
-
     </style>
 </head>
 
@@ -120,8 +114,9 @@
             <p class="text-muted">¡Solo unos datos y estarás listo para agendar citas!</p>
         </div>
         
-        <form method="POST" action="/registro" class="w-100">
-            @csrf 
+        <!-- CORREGIDO: usar la ruta nombrada del POST -->
+        <form method="POST" action="{{ route('registro.post') }}" class="w-100">
+            @csrf  
             <div class="row">
 
                 <div class="col-md-6">
@@ -152,11 +147,10 @@
                     </button>
                 </div>
             </div>
-
         </form>
         
         <div class="text-center mt-4 pt-3 border-top">
-            <p class="small text-muted mb-0">¿Ya tienes una cuenta? 
+            <p class="small text-muted mb-0">¿Ya tienes una cuenta?  
                 <a href="{{ route('login') }}" class="text-primary font-weight-bold">Inicia Sesión aquí</a>
             </p>
         </div>

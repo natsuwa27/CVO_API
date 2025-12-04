@@ -7,55 +7,57 @@
     <!-- Bootstrap -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
-    <!-- Tu CSS (si lo usas en todo el sistema) -->
+    <!-- Tu CSS -->
     <link rel="stylesheet" href="{{ asset('css/EstilosInsanos.css') }}">
 </head>
 <body>
 
-    <!-- Banner azul superior -->
-    <div style="background-color: #007bff; padding: 20px;">
-        <h2 class="text-center" style="color: white; margin: 0;">Veterinaria del Oriente</h2>
-        <h4 class="text-center" style="color: white; margin: 0; margin-top: 5px;">
-            Calendario de Citas (Administrador)
-        </h4>
+    <!-- Barra de navegación superior -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #4289dbff;">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Veterinaria del Oriente</a>
+
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a href="{{ route('admin.homeadmin') }}" class="btn btn-light">
+                            ← Volver al Panel de Administración
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Subtítulo -->
+    <div class="text-center mt-2">
+        <h4>Calendario de Citas (Administrador)</h4>
     </div>
 
     <div class="container mt-4">
 
         {{-- Mensajes de sesión --}}
         @if (session('success'))
-            <div class="alert alert-success">
-                {{ session('success') }}
-            </div>
+            <div class="alert alert-success">{{ session('success') }}</div>
         @endif
-
         @if (session('error'))
-            <div class="alert alert-danger">
-                {{ session('error') }}
-            </div>
+            <div class="alert alert-danger">{{ session('error') }}</div>
         @endif
-
         @if (session('info'))
-            <div class="alert alert-info">
-                {{ session('info') }}
-            </div>
+            <div class="alert alert-info">{{ session('info') }}</div>
         @endif
 
         <h3 class="mb-4 text-center">Calendario mensual</h3>
 
-        <!-- Filtros de año/mes y botón de regenerar -->
+        <!-- Filtros de año/mes -->
         <div class="d-flex flex-wrap align-items-end mb-4">
-
-            <!-- Seleccionar año y mes -->
             <form method="GET" action="{{ route('calendars.index') }}" class="form-inline mr-3 mb-2">
                 <div class="form-group mr-2">
                     <label for="year" class="mr-1">Año:</label>
                     <select name="year" id="year" class="form-control">
                         @php $currentYear = now()->year; @endphp
                         @for ($y = $currentYear - 1; $y <= $currentYear + 2; $y++)
-                            <option value="{{ $y }}" @selected($y == $year)>
-                                {{ $y }}
-                            </option>
+                            <option value="{{ $y }}" @selected($y == $year)>{{ $y }}</option>
                         @endfor
                     </select>
                 </div>
@@ -67,9 +69,7 @@
                             @php
                                 $monthName = \Carbon\Carbon::create($year, $m, 1)->locale('es')->isoFormat('MMMM');
                             @endphp
-                            <option value="{{ $m }}" @selected($m == $month)>
-                                {{ ucfirst($monthName) }}
-                            </option>
+                            <option value="{{ $m }}" @selected($m == $month)>{{ ucfirst($monthName) }}</option>
                         @endfor
                     </select>
                 </div>
@@ -78,16 +78,12 @@
             </form>
 
             <!-- Generar / Regenerar mes -->
-            <form method="POST"
-                  action="{{ route('calendars.generateMonth') }}"
-                  class="form-inline mb-2"
+            <form method="POST" action="{{ route('calendars.generateMonth') }}" class="form-inline mb-2"
                   onsubmit="return confirm('¿Seguro que deseas generar / REGENERAR este mes? Esto modificará los días y horarios a partir de hoy.');">
                 @csrf
                 <input type="hidden" name="year" value="{{ $year }}">
                 <input type="hidden" name="month" value="{{ $month }}">
-                <button type="submit" class="btn btn-primary">
-                    Generar / Regenerar mes
-                </button>
+                <button type="submit" class="btn btn-primary">Generar / Regenerar mes</button>
             </form>
         </div>
 
@@ -99,9 +95,7 @@
         </div>
 
         <!-- Encabezado del mes -->
-        <h4>
-            {{ ucfirst($startOfMonth->copy()->locale('es')->isoFormat('MMMM')) }} {{ $year }}
-        </h4>
+        <h4>{{ ucfirst($startOfMonth->copy()->locale('es')->isoFormat('MMMM')) }} {{ $year }}</h4>
 
         <!-- Cuadrícula del mes -->
         <div class="row border rounded p-2 mt-2">
@@ -110,30 +104,28 @@
                 $firstDayOfWeek = $startOfMonth->dayOfWeekIso; // 1 = lunes
             @endphp
 
-            <!-- Espacios vacíos antes del primer día (para alinear columnas) -->
+            <!-- Espacios vacíos antes del primer día -->
             @for ($i = 1; $i < $firstDayOfWeek; $i++)
                 <div class="col border p-2" style="min-height: 90px;"></div>
             @endfor
 
-            @php
-                $date = $startOfMonth->copy();
-            @endphp
+            @php $date = $startOfMonth->copy(); @endphp
 
             @while ($date->lte($endOfMonth))
                 @php
                     $dateKey   = $date->format('Y-m-d');
                     $calendar  = $calendars[$dateKey] ?? null;
                     $isPast    = $date->lt($today);
-                    $weekdayLabel = ucfirst($date->locale('es')->isoFormat('ddd')); // lun, mar, mié...
+                    $weekdayLabel = ucfirst($date->locale('es')->isoFormat('ddd'));
 
-                    // Valores por defecto
                     $bgClass = 'bg-light text-muted';
                     $label   = 'Sin configuración';
-                    $activeBlocksCount = null;
+                    $freeBlocks = null;
+                    $bookedBlocks = null;
 
                     if ($calendar) {
-                        // Contar solo bloques activos
-                        $activeBlocksCount = $calendar->blocks->where('is_active', true)->count();
+                        $freeBlocks   = $calendar->blocks->where('is_active', true)->where('is_booked', false)->count();
+                        $bookedBlocks = $calendar->blocks->where('is_active', true)->where('is_booked', true)->count();
 
                         if (! $calendar->is_open) {
                             $bgClass = 'bg-danger text-white';
@@ -147,11 +139,9 @@
                                 $label   = 'Abierto';
                             }
                         }
-                    } else {
-                        if ($isPast) {
-                            $bgClass = 'bg-light text-muted';
-                            $label   = 'Pasado';
-                        }
+                    } elseif ($isPast) {
+                        $bgClass = 'bg-light text-muted';
+                        $label   = 'Pasado';
                     }
                 @endphp
 
@@ -165,15 +155,13 @@
                         <span class="badge badge-warning mb-1">Hoy</span>
                     @endif
 
-                    <div>
-                        <small>{{ $label }}</small>
-                    </div>
+                    <div><small>{{ $label }}</small></div>
 
-                    @if (!is_null($activeBlocksCount))
+                    @if (!is_null($freeBlocks))
                         <div>
                             <small>
-                                {{ $activeBlocksCount }} horario{{ $activeBlocksCount === 1 ? '' : 's' }}
-                                disponible{{ $activeBlocksCount === 1 ? '' : 's' }}
+                                {{ $freeBlocks }} libre{{ $freeBlocks === 1 ? '' : 's' }},
+                                {{ $bookedBlocks }} ocupado{{ $bookedBlocks === 1 ? '' : 's' }}
                             </small>
                         </div>
                     @endif
@@ -188,13 +176,9 @@
                     @endif
                 </div>
 
-                @php
-                    $date->addDay();
-                @endphp
+                @php $date->addDay(); @endphp
             @endwhile
         </div>
-
-    </div> <!-- /.container -->
-
+    </div>
 </body>
 </html>

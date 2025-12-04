@@ -12,106 +12,14 @@ use Illuminate\Support\Facades\Auth;
 
 class AppointmentController extends Controller
 {
-    /** ------------------ API ------------------ **/
-
-    public function create(Request $request)
-    {
-        $data = $request->validate([
-            'pet_id'     => 'required|exists:pets,id',
-            'service_id' => 'required|exists:services,id',
-            'block_id'   => 'required|exists:blocks,id',
-            'reason'     => 'required|string|max:255',
-            'active'     => 'sometimes|boolean',
-        ]);
-
-        $block = Block::with('calendar')->findOrFail($data['block_id']);
-
-        if (! $block->is_active || $block->is_booked || ! $block->calendar->is_open) {
-            return response()->json(['error' => 'El horario seleccionado no está disponible.'], 422);
-        }
-
-        $appointment = Appointment::create([
-            'client_id'  => Auth::id(),
-            'pet_id'     => $data['pet_id'],
-            'service_id' => $data['service_id'],
-            'block_id'   => $block->id,
-            'date'       => $block->calendar->date->format('Y-m-d').' '.$block->start_time,
-            'reason'     => $data['reason'],
-            'active'     => $data['active'] ?? true,
-        ]);
-
-        $block->update(['is_booked' => true]);
-
-        return response()->json([
-            'message' => "Appointment created successfully",
-            'appointment' => $appointment->load(['client','pet','service'])
-        ], 201);
-    }
-
-    public function read($id)
-    {
-        $appointment = Appointment::with(['client','pet','service','block.calendar'])
-            ->where('client_id', Auth::id())
-            ->findOrFail($id);
-
-        return response()->json([
-            'message' => "Appointment details",
-            'appointment' => $appointment
-        ]);
-    }
-
     public function myAppointments()
     {
-        $appointments = Appointment::with(['client','pet','service','block.calendar'])
-            ->where('client_id', Auth::id())
-            ->get();
+        $appointments = Appointment::all();
 
         return response()->json([
-            'message' => "List of your appointments",
             'appointments' => $appointments
         ]);
     }
-
-    public function update(Request $request, $id)
-    {
-        $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
-
-        $data = $request->validate([
-            'reason' => 'sometimes|string|max:255',
-            'active' => 'sometimes|boolean',
-        ]);
-
-        $appointment->update($data);
-
-        return response()->json([
-            'message' => "Appointment updated",
-            'appointment' => $appointment->load(['client','pet','service'])
-        ]);
-    }
-
-    public function delete($id)
-    {
-        $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
-
-        if ($appointment->block_id) {
-            $block = Block::find($appointment->block_id);
-            if ($block) {
-                $block->update(['is_booked' => false]);
-            }
-        }
-
-        $appointment->update([
-            'reason' => 'Cancelled appointment',
-            'active' => false,
-        ]);
-
-        return response()->json([
-            'message' => "Appointment cancelled",
-            'appointment' => $appointment
-        ]);
-    }
-
-    /** ------------------ WEB ------------------ **/
 
     public function index()
     {
@@ -156,6 +64,9 @@ class AppointmentController extends Controller
         if (! $block->is_active || $block->is_booked || ! $block->calendar->is_open) {
             return back()->with('error', 'El horario seleccionado no está disponible.');
         }
+        if ($block->calendar->date->lt(now()->startOfDay())) {
+            return back()->with('error', 'No puedes reservar en una fecha pasada.');
+        }
 
         $appointment = Appointment::create([
             'client_id'  => Auth::id(),
@@ -184,23 +95,83 @@ class AppointmentController extends Controller
     public function editForm($id)
     {
         $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
+
+        if ($appointment->active === false) {
+            return redirect()->route('appointments.index')
+                    ->with('error', 'No puedes editar una cita cancelada.');
+        }
+
         $pets = Pet::where('owner_id', Auth::id())->get();
         $services = Service::where('active', true)->get();
 
-        return view('appointments.edit', compact('appointment','pets','services'));
+        $blocks = Block::with('calendar')
+            ->where(function ($q) {
+                $q->where('is_active', true)
+                  ->where('is_booked', false)
+                  ->whereHas('calendar', function ($c) {
+                      $c->where('is_open', true)
+                        ->whereDate('date', '>=', now()->toDateString());
+                  });
+            })
+            ->orWhere('id', $appointment->block_id)
+            ->orderBy('calendar_id')
+            ->orderBy('start_time')
+            ->get();
+
+        if ($blocks->isEmpty()) {
+            return redirect()->route('appointments.index')
+                         ->with('error', 'No hay bloques disponibles para editar la cita.');
+        }
+
+        return view('appointments.edit', compact('appointment', 'pets', 'services', 'blocks'));
     }
 
     public function updateWeb(Request $request, $id)
     {
         $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
 
+        if ($appointment->active === false) {
+            return redirect()->route('appointments.index')
+                    ->with('error', 'No puedes editar una cita cancelada.');
+        }
+
         $data = $request->validate([
             'pet_id'     => 'sometimes|exists:pets,id',
             'service_id' => 'sometimes|exists:services,id',
             'reason'     => 'sometimes|string|max:255',
+            'block_id'   => 'sometimes|exists:blocks,id',
         ]);
 
-        $appointment->update($data);
+        if (isset($data['pet_id']))     $appointment->pet_id = $data['pet_id'];
+        if (isset($data['service_id'])) $appointment->service_id = $data['service_id'];
+        if (isset($data['reason']))     $appointment->reason = $data['reason'];
+
+        $newBlockId = $data['block_id'] ?? $appointment->block_id;
+
+        if ($newBlockId != $appointment->block_id) {
+            $newBlock = Block::with('calendar')->findOrFail($newBlockId);
+
+            if (! $newBlock->is_active || $newBlock->is_booked || ! $newBlock->calendar->is_open) {
+                return back()->with('error', 'El nuevo horario seleccionado no está disponible.');
+            }
+            if ($newBlock->calendar->date->lt(now()->startOfDay())) {
+                return back()->with('error', 'No puedes mover la cita a una fecha pasada.');
+            }
+
+            $oldBlock = Block::find($appointment->block_id);
+            if ($oldBlock) {
+                $oldBlock->is_booked = false;
+                $oldBlock->save();
+            }
+
+            $appointment->block_id = $newBlock->id;
+            $appointment->date     = $newBlock->calendar->date->format('Y-m-d').' '.$newBlock->start_time;
+
+            $newBlock->is_booked = true;
+            $newBlock->save();
+        }
+
+        $appointment->save();
 
         return redirect()->route('appointments.index')->with('success', 'La Cita ha sido actualizada correctamente');
     }
