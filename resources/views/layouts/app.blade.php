@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <style>
     body { background-color: #f8f9fa; }
-    nav { background-color: #60b1e3ff; }
+    nav { background-color: #4289dbff; }
     nav a, nav button { color: #fff !important; }
     .navbar-brand { font-weight: bold; }
   </style>
@@ -14,22 +14,18 @@
 <body>
   <nav class="navbar navbar-expand-lg mb-4">
     <div class="container">
-      <!-- 👉 El logo lleva al menú principal -->
       <a class="navbar-brand text-white fw-bold" href="{{ route('cliente.homecliente') }}">
         Veterinaria del Oriente
       </a>
 
       <div class="ms-auto d-flex gap-2">
-        <!-- Enlace a citas -->
         <a href="{{ route('appointments.index') }}" class="btn btn-primary">Mis citas</a>
 
-        <!-- Botón nueva cita -->
         <a href="{{ route('appointments.create') }}" class="btn btn-primary">Nueva cita</a>
 
-        <!-- Botón salir -->
         <form action="{{ route('logout') }}" method="POST" class="d-inline">
           @csrf
-          <button class="btn btn-danger">Salir</button>
+          <button class="btn btn-danger">Cerrar Sesion</button>
         </form>
       </div>
     </div>

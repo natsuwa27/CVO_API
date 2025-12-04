@@ -26,14 +26,26 @@
           {{ $a->block->calendar->date->format('d/m/Y') }}
           {{ $a->block->start_time }} - {{ $a->block->end_time }}
         </td>
-        <td>{{ $a->active ? 'Activa' : 'Cancelada' }}</td>
+        <td>
+          @if($a->active)
+            <span class="badge bg-success">Activa</span>
+          @else
+            <span class="badge bg-secondary">Cancelada</span>
+          @endif
+        </td>
         <td class="d-flex gap-2">
           <a href="{{ route('appointments.show', $a->id) }}" class="btn btn-info btn-sm">Ver</a>
-          <a href="{{ route('appointments.edit', $a->id) }}" class="btn btn-warning btn-sm">Editar</a>
-          <form action="{{ route('appointments.delete', $a->id) }}" method="POST" onsubmit="return confirm('¿Cancelar cita?')" class="d-inline">
-            @csrf @method('DELETE')
-            <button class="btn btn-danger btn-sm">Cancelar</button>
-          </form>
+
+          @if($a->active)
+            <a href="{{ route('appointments.edit', $a->id) }}" class="btn btn-warning btn-sm">Editar</a>
+            <form action="{{ route('appointments.delete', $a->id) }}" method="POST" 
+                  onsubmit="return confirm('¿Cancelar cita?')" class="d-inline">
+              @csrf @method('DELETE')
+              <button class="btn btn-danger btn-sm">Cancelar</button>
+            </form>
+          @else
+            <span class="text-muted">Sin acciones</span>
+          @endif
         </td>
       </tr>
     @empty

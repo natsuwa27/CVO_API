@@ -13,18 +13,12 @@ return new class extends Migration
     {
       Schema::create('blocks', function (Blueprint $table) {
             $table->id();
-
             $table->unsignedBigInteger('calendar_id');
-
             $table->time('start_time');
             $table->time('end_time');
-
-            // Estado del bloque
             $table->boolean('is_active')->default(true); // admin lo apaga/prende
             $table->boolean('is_booked')->default(false); // se ocupa cuando hay cita
-
             $table->timestamps();
-
             $table->foreign('calendar_id')
                 ->references('id')->on('calendars')
                 ->onDelete('cascade');

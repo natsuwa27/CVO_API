@@ -11,10 +11,6 @@ use Illuminate\Support\Facades\DB;
 
 class CalendarController extends Controller
 {
-      /**
-     * Mostrar el calendario de un mes.
-     * GET /calendars?year=2025&month=12
-     */
     public function index(Request $request)
     {
         $year = (int) $request->input('year', now()->year);
@@ -22,8 +18,6 @@ class CalendarController extends Controller
 
         $startOfMonth = Carbon::create($year, $month, 1)->startOfDay();
         $endOfMonth   = $startOfMonth->copy()->endOfMonth();
-
-        // Obtenemos todos los días generados de ese mes
         $calendars = Calendar::whereBetween('date', [
                 $startOfMonth->toDateString(),
                 $endOfMonth->toDateString(),
@@ -41,10 +35,6 @@ class CalendarController extends Controller
         ]);
     }
 
-    /**
-     * Generar el calendario y bloques de un mes según la configuración activa.
-     * POST /calendars/generate-month
-     */
     public function generateMonth(Request $request)
     {
         $data = $request->validate([
@@ -55,10 +45,8 @@ class CalendarController extends Controller
         $year  = (int) $data['year'];
         $month = (int) $data['month'];
 
-        // Obtenemos la configuración activa (por ahora la primera)
         $settings = CalendarSetting::where('is_active', true)->first();
 
-        // Si no existe, creamos una por defecto (por si acaso).
         if (! $settings) {
             $settings = CalendarSetting::create([
                 'block_duration' => 30,
@@ -76,7 +64,6 @@ class CalendarController extends Controller
 
         DB::transaction(function () use ($startOfMonth, $endOfMonth, $workingDays, $settings) {
 
-            // Borramos solo días FUTUROS de ese rango (no tocamos historial pasado)
             Calendar::whereBetween('date', [
                     $startOfMonth->toDateString(),
                     $endOfMonth->toDateString(),
@@ -106,7 +93,6 @@ class CalendarController extends Controller
                 if ($isOpen) {
                     $this->generateBlocksForDay($calendar, (int) $settings->block_duration);
                 }
-
                 $currentDay->addDay();
             }
         });
@@ -114,12 +100,8 @@ class CalendarController extends Controller
         return back()->with('success', 'Calendario del mes generado correctamente.');
     }
 
-    /**
-     * Generar bloques para un día concreto, según la duración.
-     */
     private function generateBlocksForDay(Calendar $calendar, int $blockDuration): void
     {
-        // Si un día no tiene horario configurado, no generamos nada
         if (empty($calendar->start_time) || empty($calendar->end_time)) {
             return;
         }
@@ -143,15 +125,10 @@ class CalendarController extends Controller
                 'is_booked'   => false,
             ]);
 
-            // IMPORTANTE: pasar un int, no string
             $start->addMinutes($blockDuration);
         }
     }
 
-    /**
-     * Mostrar un día con todos sus bloques.
-     * GET /calendars/{calendar}
-     */
     public function show(Calendar $calendar)
     {
         $calendar->load(['blocks' => function ($query) {
@@ -165,29 +142,22 @@ class CalendarController extends Controller
 {
     $today = Carbon::today();
 
-    // No permitir modificar días que ya pasaron
     if ($calendar->date->lt($today)) {
         return back()->with('error', 'No puedes modificar un día que ya pasó.');
     }
 
-    // Día de la semana: 1 = lun, 7 = dom
     $weekday = $calendar->date->dayOfWeekIso;
 
-    // ❌ NO permitir reabrir fines de semana
-    // Si el día es sábado o domingo Y está cerrado → NO permitir abrirlo
     if ($weekday >= 6 && ! $calendar->is_open) {
         return back()->with('error', 'Este día es fin de semana y no está configurado como día laboral. No puede reabrirse.');
     }
 
-    // ---------- TOGGLE DEL ESTADO ----------
     if ($calendar->is_open) {
-        // Estaba ABIERTO → lo CERRAMOS
         DB::transaction(function () use ($calendar) {
             $calendar->update([
                 'is_open' => false,
             ]);
 
-            // Desactivar todos los bloques
             $calendar->blocks()->update([
                 'is_active' => false,
             ]);
@@ -195,13 +165,11 @@ class CalendarController extends Controller
 
         return back()->with('success', 'El día se cerró correctamente y se desactivaron todos los bloques.');
     } else {
-        // Estaba CERRADO → lo REABRIMOS (solo lunes-viernes)
         DB::transaction(function () use ($calendar) {
             $calendar->update([
                 'is_open' => true,
             ]);
 
-            // Reactivar todos los bloques
             $calendar->blocks()->update([
                 'is_active' => true,
             ]);
@@ -211,10 +179,6 @@ class CalendarController extends Controller
     }
 }
 
-    /**
-     * Alternar el estado de un bloque (activar/desactivar).
-     * PATCH /blocks/{block}/toggle
-     */
     public function toggleBlock(Block $block)
     {
        $calendar = $block->calendar; // gracias a la relación
@@ -225,17 +189,14 @@ class CalendarController extends Controller
 
     $today = Carbon::today();
 
-    // No permitir cambios en días pasados
     if ($calendar->date->lt($today)) {
         return back()->with('error', 'No puedes modificar bloques de un día que ya pasó.');
     }
 
-    // No permitir cambios si el día está cerrado
     if (! $calendar->is_open) {
         return back()->with('error', 'No puedes modificar bloques de un día cerrado.');
     }
 
-    // Toggle simple
     $block->update([
         'is_active' => ! $block->is_active,
     ]);

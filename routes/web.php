@@ -8,11 +8,12 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\CalendarController;
 
+// Página de bienvenida
 Route::get('/', function () {
     return view('auth.bienvenida');
 })->name('bienvenida');
 
-
+// Redirección a login
 Route::get("/login", function () {
     return redirect()->route("login");
 });
@@ -22,15 +23,14 @@ Route::get('/registro', function () {
     return view('auth.registro');
 })->name('registro');
 
+Route::post('/registro', [WebAuthController::class, 'webRegister'])->name('registro.post');
+
 Route::get('/login', [WebAuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [WebAuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 
-// ADMIN (role_id = 1)
-
-
-        Route::middleware(['auth', 'role:1'])->group(function () {
-
+// ---------------- ADMIN (role_id = 1) ----------------
+Route::middleware(['auth', 'role:1'])->group(function () {
     Route::get('/admin/homeadmin', [WebAuthController::class, 'adminPanel'])
         ->name('admin.homeadmin');
 
@@ -46,63 +46,37 @@ Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
     Route::post('/admin/crear-usuario', [WebAuthController::class, 'storeUser'])
         ->name('admin.storeusuario');
 
-        Route::put('/admin/usuarios/{id}', [WebAuthController::class, 'updateusuario'])
-    ->name('admin.updateusuario');
-
-
+    Route::put('/admin/usuarios/{id}', [WebAuthController::class, 'updateusuario'])
+        ->name('admin.updateusuario');
 });
 
-
-
-
-// EMPLEADO (role_id = 2)
+// ---------------- EMPLEADO (role_id = 2) ----------------
 Route::middleware(['auth', 'role:2'])->group(function () {
     Route::get('/empleado/homeempleado', fn() => view('empleado.homeempleado'))
         ->name('empleado.homeempleado');
 });
 
-// CLIENTE (role_id = 3)
+// ---------------- CLIENTE (role_id = 3) ----------------
 Route::middleware(['auth', \App\Http\Middleware\RoleMiddleware::class . ':3'])->group(function () {
     Route::get('/cliente/homecliente', [PetController::class, 'index'])->name('cliente.homecliente');
     Route::get('/cliente/registro_mascota', [PetController::class, 'create'])->name('pets.create');
     Route::post('/cliente/registro_mascota', [PetController::class, 'store'])->name('pets.store');
-    
-    
 });
 
-
-//ariel
+// CRUD de mascotas
 Route::middleware(['auth', 'role:3'])->group(function () {
     Route::prefix('pets')->group(function () {
-        // Lista de mascotas
-        Route::get('/', [PetController::class, 'index'])->name('cliente.homecliente');
-
-        // Formulario de registro
+        Route::get('/', [PetController::class, 'index'])->name('pets.index');
         Route::get('/create', [PetController::class, 'create'])->name('pets.create');
-
-        // Guardar nueva mascota
         Route::post('/store', [PetController::class, 'store'])->name('pets.store');
-
-        // Ver detalle de mascota
         Route::get('/{id}', [PetController::class, 'show'])->name('pets.show');
-
-        // Formulario de edición
         Route::get('/{id}/edit', [PetController::class, 'edit'])->name('pets.edit');
-
-        // Actualizar mascota
         Route::put('/{id}', [PetController::class, 'update'])->name('pets.update');
-
-        // Eliminar mascota
         Route::delete('/{id}', [PetController::class, 'destroy'])->name('pets.destroy');
     });
 });
 
-Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
-
-
-Route::post('/registro', [WebAuthController::class, 'webRegister']);
-
-//carlos
+// CRUD de citas
 Route::middleware(['auth', 'role:3'])->group(function () {
     Route::prefix('appointments')->group(function () {
         Route::get('/index', [AppointmentController::class, 'index'])->name('appointments.index');
@@ -115,8 +89,7 @@ Route::middleware(['auth', 'role:3'])->group(function () {
     });
 });
 
-Route::post('/registro', [WebAuthController::class, 'webRegister']);
-
+// ---------------- CALENDARIO (ADMIN) ----------------
 Route::middleware(['auth','role:1'])->group(function () {
     Route::get('/calendars', [CalendarController::class, 'index'])->name('calendars.index');
     Route::post('/calendars/generate-month', [CalendarController::class, 'generateMonth'])->name('calendars.generateMonth');
