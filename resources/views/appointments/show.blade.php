@@ -25,7 +25,7 @@
     @if($appointment->active)
       <span class="badge bg-success">Activa</span>
     @else
-      <span class="badge bg-danger">Cancelada por cierre de día</span>
+      <span class="badge bg-danger">Cancelada</span>
     @endif
   </li>
 </ul>
@@ -42,7 +42,7 @@
       <button class="btn btn-danger">Cancelar</button>
     </form>
   @else
-    <span class="text-muted">Esta cita fue cancelada por el administrador.</span>
+    <span class="text-muted">Cita cancelada</span>
   @endif
 </div>
 @endsection

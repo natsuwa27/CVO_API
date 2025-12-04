@@ -18,6 +18,7 @@ class CalendarController extends Controller
 
         $startOfMonth = Carbon::create($year, $month, 1)->startOfDay();
         $endOfMonth   = $startOfMonth->copy()->endOfMonth();
+
         $calendars = Calendar::whereBetween('date', [
                 $startOfMonth->toDateString(),
                 $endOfMonth->toDateString(),
@@ -135,77 +136,79 @@ class CalendarController extends Controller
             $query->orderBy('start_time');
         }]);
 
-         return view('admin.calendar.show', compact('calendar'));
+        return view('admin.calendar.show', compact('calendar'));
     }
 
     public function closeDay(Calendar $calendar)
-{
-    $today = Carbon::today();
+    {
+        $today = Carbon::today();
 
-    if ($calendar->date->lt($today)) {
-        return back()->with('error', 'No puedes modificar un día que ya pasó.');
+        if ($calendar->date->lt($today)) {
+            return back()->with('error', 'No puedes modificar un día que ya pasó.');
+        }
+
+        $weekday = $calendar->date->dayOfWeekIso;
+
+        if ($weekday >= 6 && ! $calendar->is_open) {
+            return back()->with('error', 'Este día es fin de semana y no está configurado como día laboral. No puede reabrirse.');
+        }
+
+        if ($calendar->is_open) {
+            DB::transaction(function () use ($calendar) {
+                // 1. Cerrar el día
+                $calendar->update(['is_open' => false]);
+
+                // 2. Desactivar todos los bloques
+                $calendar->blocks()->update(['is_active' => false]);
+
+                // 3. Cancelar todas las citas asociadas a esos bloques (solo marcar como canceladas)
+                foreach ($calendar->blocks as $block) {
+                    foreach ($block->appointments as $appointment) {
+                        $appointment->update([
+                            'active' => false,
+                        ]);
+                    }
+                }
+            });
+
+            return back()->with('success', 'El día se cerró correctamente, se desactivaron los bloques y se cancelaron las citas.');
+        } else {
+            DB::transaction(function () use ($calendar) {
+                $calendar->update(['is_open' => true]);
+                $calendar->blocks()->update(['is_active' => true]);
+            });
+
+            return back()->with('success', 'El día se reabrió correctamente y se activaron todos los bloques.');
+        }
     }
-
-    $weekday = $calendar->date->dayOfWeekIso;
-
-    if ($weekday >= 6 && ! $calendar->is_open) {
-        return back()->with('error', 'Este día es fin de semana y no está configurado como día laboral. No puede reabrirse.');
-    }
-
-    if ($calendar->is_open) {
-        DB::transaction(function () use ($calendar) {
-            $calendar->update([
-                'is_open' => false,
-            ]);
-
-            $calendar->blocks()->update([
-                'is_active' => false,
-            ]);
-        });
-
-        return back()->with('success', 'El día se cerró correctamente y se desactivaron todos los bloques.');
-    } else {
-        DB::transaction(function () use ($calendar) {
-            $calendar->update([
-                'is_open' => true,
-            ]);
-
-            $calendar->blocks()->update([
-                'is_active' => true,
-            ]);
-        });
-
-        return back()->with('success', 'El día se reabrió correctamente y se activaron todos los bloques.');
-    }
-}
 
     public function toggleBlock(Block $block)
     {
-       $calendar = $block->calendar; // gracias a la relación
+        $calendar = $block->calendar; // gracias a la relación
 
-    if (! $calendar) {
-        return back()->with('error', 'No se encontró el día asociado a este bloque.');
-    }
+        if (! $calendar) {
+            return back()->with('error', 'No se encontró el día asociado a este bloque.');
+        }
 
-    $today = Carbon::today();
+        $today = Carbon::today();
 
-    if ($calendar->date->lt($today)) {
-        return back()->with('error', 'No puedes modificar bloques de un día que ya pasó.');
-    }
+        if ($calendar->date->lt($today)) {
+            return back()->with('error', 'No puedes modificar bloques de un día que ya pasó.');
+        }
 
-    if (! $calendar->is_open) {
-        return back()->with('error', 'No puedes modificar bloques de un día cerrado.');
-    }
+        if (! $calendar->is_open) {
+            return back()->with('error', 'No puedes modificar bloques de un día cerrado.');
+        }
 
-    $block->update([
-        'is_active' => ! $block->is_active,
-    ]);
+        $block->update([
+            'is_active' => ! $block->is_active,
+        ]);
 
-    return back()->with(
-        'success',
-        $block->is_active
-            ? 'Bloque activado correctamente.'
-            : 'Bloque desactivado correctamente.'
-    );
+        return back()->with(
+            'success',
+            $block->is_active
+                ? 'Bloque activado correctamente.'
+                : 'Bloque desactivado correctamente.'
+        );
     }
 }

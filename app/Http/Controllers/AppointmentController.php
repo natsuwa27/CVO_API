@@ -12,119 +12,6 @@ use Illuminate\Support\Facades\Auth;
 
 class AppointmentController extends Controller
 {
-    /** ------------------ API ------------------ **/
-
-    public function create(Request $request)
-    {
-        $data = $request->validate([
-            'pet_id'     => 'required|exists:pets,id',
-            'service_id' => 'required|exists:services,id',
-            'block_id'   => 'required|exists:blocks,id',
-            'reason'     => 'required|string|max:255',
-            'active'     => 'sometimes|boolean',
-        ]);
-
-        $block = Block::with('calendar')->findOrFail($data['block_id']);
-
-        // Validar disponibilidad del bloque
-        if (! $block->is_active || $block->is_booked || ! $block->calendar->is_open) {
-            return response()->json(['error' => 'El horario seleccionado no está disponible.'], 422);
-        }
-
-        // Evitar reservas en fechas pasadas
-        if ($block->calendar->date->lt(now()->startOfDay())) {
-            return response()->json(['error' => 'No puedes reservar en una fecha pasada.'], 422);
-        }
-
-        $appointment = Appointment::create([
-            'client_id'  => Auth::id(),
-            'pet_id'     => $data['pet_id'],
-            'service_id' => $data['service_id'],
-            'block_id'   => $block->id,
-            'date'       => $block->calendar->date->format('Y-m-d').' '.$block->start_time,
-            'reason'     => $data['reason'],
-            'active'     => $data['active'] ?? true,
-        ]);
-
-        $block->update(['is_booked' => true]);
-
-        return response()->json([
-            'message' => "Appointment created successfully",
-            'appointment' => $appointment->load(['client','pet','service'])
-        ], 201);
-    }
-
-    public function read($id)
-    {
-        $appointment = Appointment::with(['client','pet','service','block.calendar'])
-            ->where('client_id', Auth::id())
-            ->findOrFail($id);
-
-        return response()->json([
-            'message' => "Appointment details",
-            'appointment' => $appointment
-        ]);
-    }
-
-    public function myAppointments()
-    {
-        $appointments = Appointment::with(['client','pet','service','block.calendar'])
-            ->where('client_id', Auth::id())
-            ->orderBy('date', 'asc')
-            ->get();
-
-        return response()->json([
-            'message' => "List of your appointments",
-            'appointments' => $appointments
-        ]);
-    }
-
-    public function update(Request $request, $id)
-    {
-      $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
-
-      $data = $request->validate([
-          'reason' => 'sometimes|string|max:255',
-          'active' => 'sometimes|boolean',
-      ]);
-
-      // No permitir editar si está cancelada
-      if ($appointment->active === false) {
-          return response()->json(['error' => 'No puedes editar una cita cancelada.'], 422);
-      }
-
-      $appointment->update($data);
-
-      return response()->json([
-          'message' => "Appointment updated",
-          'appointment' => $appointment->load(['client','pet','service'])
-      ]);
-    }
-
-    public function delete($id)
-    {
-        $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
-
-        if ($appointment->block_id) {
-            $block = Block::find($appointment->block_id);
-            if ($block) {
-                $block->update(['is_booked' => false]);
-            }
-        }
-
-        $appointment->update([
-            'reason' => 'Cancelled appointment',
-            'active' => false,
-        ]);
-
-        return response()->json([
-            'message' => "Appointment cancelled",
-            'appointment' => $appointment
-        ]);
-    }
-
-    /** ------------------ WEB ------------------ **/
-
     public function index()
     {
         $appointments = Appointment::with(['client','pet','service','block.calendar'])
@@ -165,7 +52,6 @@ class AppointmentController extends Controller
 
         $block = Block::with('calendar')->findOrFail($data['block_id']);
 
-        // Validaciones de disponibilidad y fecha
         if (! $block->is_active || $block->is_booked || ! $block->calendar->is_open) {
             return back()->with('error', 'El horario seleccionado no está disponible.');
         }
@@ -201,7 +87,6 @@ class AppointmentController extends Controller
     {
         $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
 
-        // No permitir editar si está cancelada
         if ($appointment->active === false) {
             return redirect()->route('appointments.index')
                     ->with('error', 'No puedes editar una cita cancelada.');
@@ -210,7 +95,6 @@ class AppointmentController extends Controller
         $pets = Pet::where('owner_id', Auth::id())->get();
         $services = Service::where('active', true)->get();
 
-        // Bloques disponibles futuros, incluyendo el bloque actual para permitir mantenerlo
         $blocks = Block::with('calendar')
             ->where(function ($q) {
                 $q->where('is_active', true)
@@ -237,7 +121,6 @@ class AppointmentController extends Controller
     {
         $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
 
-        // No permitir editar si está cancelada
         if ($appointment->active === false) {
             return redirect()->route('appointments.index')
                     ->with('error', 'No puedes editar una cita cancelada.');
@@ -250,18 +133,15 @@ class AppointmentController extends Controller
             'block_id'   => 'sometimes|exists:blocks,id',
         ]);
 
-        // Actualizar datos básicos
         if (isset($data['pet_id']))     $appointment->pet_id = $data['pet_id'];
         if (isset($data['service_id'])) $appointment->service_id = $data['service_id'];
         if (isset($data['reason']))     $appointment->reason = $data['reason'];
 
-        // Cambiar de bloque si se envió uno nuevo
         $newBlockId = $data['block_id'] ?? $appointment->block_id;
 
         if ($newBlockId != $appointment->block_id) {
             $newBlock = Block::with('calendar')->findOrFail($newBlockId);
 
-            // Validar disponibilidad y fecha del nuevo bloque
             if (! $newBlock->is_active || $newBlock->is_booked || ! $newBlock->calendar->is_open) {
                 return back()->with('error', 'El nuevo horario seleccionado no está disponible.');
             }
@@ -269,18 +149,15 @@ class AppointmentController extends Controller
                 return back()->with('error', 'No puedes mover la cita a una fecha pasada.');
             }
 
-            // Liberar bloque anterior
             $oldBlock = Block::find($appointment->block_id);
             if ($oldBlock) {
                 $oldBlock->is_booked = false;
                 $oldBlock->save();
             }
 
-            // Asignar nuevo bloque y recomputar la fecha/hora de la cita
             $appointment->block_id = $newBlock->id;
             $appointment->date     = $newBlock->calendar->date->format('Y-m-d').' '.$newBlock->start_time;
 
-            // Marcar el nuevo bloque como ocupado
             $newBlock->is_booked = true;
             $newBlock->save();
         }
@@ -294,7 +171,6 @@ class AppointmentController extends Controller
     {
         $appointment = Appointment::where('client_id', Auth::id())->findOrFail($id);
 
-        // Liberar bloque si existe
         if ($appointment->block_id) {
             $block = Block::find($appointment->block_id);
             if ($block) {
@@ -302,7 +178,6 @@ class AppointmentController extends Controller
             }
         }
 
-        // Marcar cita como cancelada (active = false)
         $appointment->update(['active' => false, 'reason' => 'Cancelled appointment']);
 
         return redirect()->route('appointments.index')->with('success', 'La Cita ha sido cancelada');
