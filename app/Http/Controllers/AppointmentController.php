@@ -12,6 +12,15 @@ use Illuminate\Support\Facades\Auth;
 
 class AppointmentController extends Controller
 {
+    public function myAppointments()
+    {
+        $appointments = Appointment::all();
+
+        return response()->json([
+            'appointments' => $appointments
+        ]);
+    }
+
     public function index()
     {
         $appointments = Appointment::with(['client','pet','service','block.calendar'])
